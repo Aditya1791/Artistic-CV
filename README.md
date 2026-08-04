@@ -48,7 +48,7 @@ Want to create eye-catching artwork for your website, social media, or portfolio
 
 | Effect Name | Original Image 📸 | Output Art 🎨 |
 | :---: | :---: | :---: |
-| **Snapchat Beauty Glow** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/assets/snapchat_beauty_smooth_glow.jpg" width="180"> |
+| **Snapchat Beauty Glow** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/snapchat_beauty_smooth_glow.jpg" width="180"> |
 | **Instagram Clarendon** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/instagram_clarendon.jpg" width="180"> |
 | **Oil Painting** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/oil_painting.jpg" width="180"> |
 | **Water Coloring** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/water_coloring.jpg" width="180"> |
