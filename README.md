@@ -48,8 +48,8 @@ Want to create eye-catching artwork for your website, social media, or portfolio
 
 | Effect Name | Original Image 📸 | Output Art 🎨 |
 | :---: | :---: | :---: |
-| **Snapchat Beauty Glow** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/snapchat_beauty_glow.jpg" width="180" onerror="this.src='static/previews/snapchat_beauty_glow.jpg'"> |
-| **Instagram Clarendon** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/instagram_clarendon.jpg" width="180" onerror="this.src='static/previews/instagram_clarendon.jpg'"> |
+| **Snapchat Beauty Glow** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/snapchat_beauty_glow.jpg" width="180"> |
+| **Instagram Clarendon** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/instagram_clarendon.jpg" width="180"> |
 | **Oil Painting** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/oil_painting.jpg" width="180"> |
 | **Water Coloring** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/water_coloring.jpg" width="180"> |
 | **Pencil Sketch (B&W)** | <img src="assets/kolkata.jpg" width="180"> | <img src="assets/b&w_sketch.jpg" width="180"> |
