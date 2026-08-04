@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArtisticCV 🎨 All-in-One Computer Vision & Creative Studio</title>
+  <link rel="icon" type="image/jpeg" href="/LOGO.jpg">
+  <link rel="shortcut icon" href="/LOGO.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <img src="/LOGO.jpg" alt="ArtisticCV Logo" class="brand-logo-img">
+        <div class="brand-text">
+          <h1>ArtisticCV <span>Creative Suite</span></h1>
+          <p>Computer Vision Image, Video, Animation & Inpainting Studio</p>
+        </div>
+      </div>
+
+      <!-- Studio Mode Switcher -->
+      <div class="mode-switcher">
+        <button class="mode-btn active" id="photoModeBtn" data-mode="photo">📷 Photo Studio</button>
+        <button class="mode-btn" id="videoModeBtn" data-mode="video">🎥 Video & GIF Studio</button>
+      </div>
+
+      <div class="nav-links">
+        <a href="/docs" target="_blank" class="badge-link">⚡ REST API Docs</a>
+        <a href="https://github.com/Aditya1791/Artistic-CV" target="_blank" class="github-icon-link" title="GitHub Repository">
+          <svg height="24" viewBox="0 0 16 16" version="1.1" width="24" aria-hidden="true" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="workspace" id="workspace">
+      <!-- Left Sidebar: Tool Selector & Controls -->
+      <aside class="sidebar" id="sidebar">
+        <!-- Main Tool Mode Switcher Tabs -->
+        <div class="panel-section">
+          <div class="panel-header-row">
+            <h2>Toolbox</h2>
+            <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Expand / Collapse Sidebar">◀</button>
+          </div>
+          <div class="tool-tabs">
+            <button class="tool-btn active" id="toolFiltersBtn" data-tool="filters" title="Artistic Filters">
+              <span class="tool-icon">🎨</span>
+              <span class="tool-label">Filters</span>
+            </button>
+            <button class="tool-btn" id="toolEnhancerBtn" data-tool="enhancer" title="CV Enhancer">
+              <span class="tool-icon">✨</span>
+              <span class="tool-label">Enhancer</span>
+            </button>
+            <button class="tool-btn" id="toolBrushBtn" data-tool="brush" title="Manual Brush">
+              <span class="tool-icon">🖌️</span>
+              <span class="tool-label">Brush</span>
+            </button>
+            <button class="tool-btn" id="toolEraserBtn" data-tool="eraser" title="AI Object Eraser">
+              <span class="tool-icon">🧽</span>
+              <span class="tool-label">AI Eraser</span>
+            </button>
+            <button class="tool-btn" id="toolStickersBtn" data-tool="stickers" title="Stickers & Overlay">
+              <span class="tool-icon">⭐</span>
+              <span class="tool-label">Stickers</span>
+            </button>
+            <button class="tool-btn" id="toolFramesBtn" data-tool="frames" title="Decorative Frames">
+              <span class="tool-icon">🖼️</span>
+              <span class="tool-label">Frames</span>
+            </button>
+            <button class="tool-btn" id="toolResizerBtn" data-tool="resizer" title="Image Resizer">
+              <span class="tool-icon">📐</span>
+              <span class="tool-label">Resizer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Filters View -->
+        <div class="panel-section tool-view" id="viewFilters">
+          <h2>Artistic Filters</h2>
+          <div class="category-tabs" id="categoryTabs">
+            <button class="tab-btn active" data-cat="All">All</button>
+            <button class="tab-btn" data-cat="Paintings">Paintings</button>
+            <button class="tab-btn" data-cat="Cartoons">Cartoons</button>
+            <button class="tab-btn" data-cat="Sketches">Sketches</button>
+            <button class="tab-btn" data-cat="Digital Art">Digital</button>
+            <button class="tab-btn" data-cat="Filters">Filters</button>
+          </div>
+          <div class="effects-grid" id="effectsGrid">
+            <!-- Dynamically populated with preview thumbnail images -->
+          </div>
+          <div class="params-container" id="paramsContainer" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- 2. Enhancer View -->
+        <div class="panel-section tool-view" id="viewEnhancer" style="display: none;">
+          <h2>CV Enhancer Adjustments</h2>
+          <div class="params-container">
+            <div class="param-field">
+              <label>Brightness <span id="valBrightness">0</span></label>
+              <input type="range" id="sliderBrightness" min="-100" max="100" value="0">
+            </div>
+            <div class="param-field">
+              <label>Contrast <span id="valContrast">0</span></label>
+              <input type="range" id="sliderContrast" min="-100" max="100" value="0">
+            </div>
+            <div class="param-field">
+              <label>Saturation <span id="valSaturation">0</span></label>
+              <input type="range" id="sliderSaturation" min="-100" max="100" value="0">
+            </div>
+            <div class="param-field">
+              <label>Sharpness <span id="valSharpness">0</span></label>
+              <input type="range" id="sliderSharpness" min="0" max="100" value="0">
+            </div>
+            <div class="param-field">
+              <label>Warmth / Temp <span id="valWarmth">0</span></label>
+              <input type="range" id="sliderWarmth" min="-100" max="100" value="0">
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <button class="btn primary" id="applyEnhanceBtn" style="flex: 1;">Apply ✨</button>
+              <button class="btn secondary" id="revertEnhanceBtn" style="flex: 1;">Revert 🔄</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Brush View -->
+        <div class="panel-section tool-view" id="viewBrush" style="display: none;">
+          <h2>Manual Brush Studio</h2>
+          <div class="params-container">
+            <div class="param-field">
+              <label>Brush Design</label>
+              <select id="brushStyleSelect">
+                <option value="round">🟣 Round Solid Brush</option>
+                <option value="neon">✨ Neon Glow Brush</option>
+                <option value="chisel">✒️ Calligraphy Chisel</option>
+                <option value="spray">💦 Spray Paint Particle</option>
+                <option value="marker">🖍️ Highlighter Marker</option>
+              </select>
+            </div>
+            <div class="param-field">
+              <label>Brush Color</label>
+              <input type="color" id="brushColorPicker" value="#00f2fe" style="width: 100%; height: 40px; border-radius: 8px; cursor: pointer;">
+            </div>
+            <div class="param-field">
+              <label>Brush Size <span id="valBrushSize">12px</span></label>
+              <input type="range" id="sliderBrushSize" min="2" max="60" value="12">
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <button class="btn secondary" id="clearBrushBtn" style="flex: 1;">Clear Drawings 🧹</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. AI Eraser View -->
+        <div class="panel-section tool-view" id="viewEraser" style="display: none;">
+          <h2>OpenCV AI Object Removal</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Draw over any object on the photo, adjust inpainting parameters, then click Erase Object!</p>
+          <div class="params-container">
+            <div class="param-field">
+              <label>AI Inpainting Method</label>
+              <select id="eraserMethodSelect">
+                <option value="seamless">✨ Dual-Pass Multi-Scale Seamless</option>
+                <option value="telea">⚡ Telea Fast Marching</option>
+                <option value="ns">🌊 Navier-Stokes Fluid</option>
+              </select>
+            </div>
+            <div class="param-field">
+              <label>Eraser Brush Size <span id="valEraserSize">25px</span></label>
+              <input type="range" id="sliderEraserSize" min="5" max="90" value="25">
+            </div>
+            <div class="param-field">
+              <label>Search Radius <span id="valInpaintRadius">5px</span></label>
+              <input type="range" id="sliderInpaintRadius" min="1" max="25" value="5">
+            </div>
+            <div class="param-field">
+              <label>Edge Mask Dilation <span id="valMaskDilation">3px</span></label>
+              <input type="range" id="sliderMaskDilation" min="1" max="10" value="3">
+            </div>
+            <button class="btn primary" id="triggerInpaintBtn" style="width: 100%; margin-top: 0.5rem;">Erase Masked Object 🧽</button>
+            <button class="btn secondary" id="clearEraserMaskBtn" style="width: 100%; margin-top: 0.4rem;">Clear Eraser Mask</button>
+          </div>
+        </div>
+
+        <!-- 5. Stickers View -->
+        <div class="panel-section tool-view" id="viewStickers" style="display: none;">
+          <h2>Stickers & Media Overlay</h2>
+          <div class="params-container" style="margin-bottom: 1rem;">
+            <div class="param-field">
+              <label>Sticker Scale / Size <span id="valStickerScale">80px</span></label>
+              <input type="range" id="sliderStickerScale" min="20" max="250" value="80">
+            </div>
+            <div class="param-field">
+              <label>Sticker Crop Mask</label>
+              <select id="stickerCropSelect">
+                <option value="full">⬛ Full Original</option>
+                <option value="circle">⭕ Circle Crop Mask</option>
+                <option value="square">⏹️ 1:1 Square Crop</option>
+                <option value="diamond">💎 Diamond Badge Mask</option>
+              </select>
+            </div>
+            
+            <div class="params-container" id="videoStickerTimingContainer" style="display: none; margin-top: 0.5rem; background: rgba(0,0,0,0.2);">
+              <h4 style="font-size: 0.8rem; color: var(--accent-cyan); margin-bottom: 0.25rem;">Video Sticker Timing Duration</h4>
+              <div style="display: flex; gap: 0.4rem;">
+                <div class="param-field" style="flex: 1;">
+                  <label style="font-size: 0.72rem;">Start Time (s)</label>
+                  <input type="number" id="stickerStartSec" step="0.5" min="0" value="0" style="background: rgba(15,23,42,0.9); color:#fff; border:1px solid var(--panel-border); padding:0.25rem; border-radius:4px; font-size:0.75rem;">
+                </div>
+                <div class="param-field" style="flex: 1;">
+                  <label style="font-size: 0.72rem;">End Time (s)</label>
+                  <input type="number" id="stickerEndSec" step="0.5" min="0" placeholder="Full Video" style="background: rgba(15,23,42,0.9); color:#fff; border:1px solid var(--panel-border); padding:0.25rem; border-radius:4px; font-size:0.75rem;">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+              <input type="file" id="customStickerInput" accept="image/*" hidden>
+              <button class="btn primary" id="uploadStickerBtn" style="width: 100%; font-size: 0.85rem;" onclick="document.getElementById('customStickerInput').click()">Upload Custom Sticker 🖼️</button>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.2rem;">
+                <button class="btn primary" id="commitStickerBtn" style="flex: 1; font-size: 0.78rem;">Commit Sticker ✓</button>
+                <button class="btn secondary" id="deleteStickerBtn" style="flex: 1; font-size: 0.78rem;">Delete 🗑️</button>
+              </div>
+            </div>
+          </div>
+
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Click a sticker or upload custom media, then click on the canvas to place, drag, resize, or rotate!</p>
+          <div class="sticker-grid" id="stickerGrid">
+            <button class="sticker-item">🎨</button>
+            <button class="sticker-item">🔥</button>
+            <button class="sticker-item">⭐</button>
+            <button class="sticker-item">🚀</button>
+            <button class="sticker-item">👑</button>
+            <button class="sticker-item">💎</button>
+            <button class="sticker-item">🕶️</button>
+            <button class="sticker-item">💖</button>
+            <button class="sticker-item">🌈</button>
+            <button class="sticker-item">⚡</button>
+            <button class="sticker-item">🎬</button>
+            <button class="sticker-item">🏆</button>
+          </div>
+        </div>
+
+        <!-- 6. Frames & Multi-Video Sequence View -->
+        <div class="panel-section tool-view" id="viewFrames" style="display: none;">
+          <h2>Frames & Video Sequence</h2>
+          
+          <!-- Photo Mode Custom Pattern Frame Generator -->
+          <div class="params-container" id="photoFrameContainer" style="margin-bottom: 1rem;">
+            <h4 style="font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 0.25rem;">Custom Repeated Image Border Studio</h4>
+            <div style="margin-bottom: 0.5rem;">
+              <input type="file" id="patternFrameFileInput" accept="image/*" hidden>
+              <button class="btn primary" id="uploadPatternFrameBtn" style="width: 100%; font-size: 0.8rem;" onclick="document.getElementById('patternFrameFileInput').click()">Upload Pattern Image 🖼️</button>
+            </div>
+            <div class="param-field">
+              <label>Gap Between Repetitions <span id="valFrameGap">15px</span></label>
+              <input type="range" id="sliderFrameGap" min="0" max="60" value="15">
+            </div>
+            <div class="param-field">
+              <label>Pattern Item Scale <span id="valFrameItemSize">40px</span></label>
+              <input type="range" id="sliderFrameItemSize" min="15" max="100" value="40">
+            </div>
+            <div class="param-field">
+              <label>Border Padding Width <span id="valFramePadding">60px</span></label>
+              <input type="range" id="sliderFramePadding" min="20" max="120" value="60">
+            </div>
+            <button class="btn primary" id="applyPatternFrameBtn" style="width: 100%; margin-top: 0.3rem;">Apply Custom Pattern Frame ✨</button>
+          </div>
+
+          <!-- Video Mode Multi-Video Sequence & Duration Trimmer -->
+          <div class="params-container" id="videoSequenceContainer" style="display: none; margin-bottom: 1rem;">
+            <h4 style="font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 0.25rem;">Multi-Video Sequence Timeline</h4>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Add multiple video clips, trim start/end duration, and rearrange sequence order.</p>
+            
+            <input type="file" id="videoClipInput" accept="video/*,image/gif" multiple hidden>
+            <button class="btn primary" id="addVideoClipBtn" style="width: 100%; font-size: 0.8rem;" onclick="document.getElementById('videoClipInput').click()">Add Video Clips + 🎬</button>
+            
+            <div id="videoClipList" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+              <!-- Dynamically populated video clip cards -->
+            </div>
+            
+            <button class="btn primary" id="renderVideoSequenceBtn" style="width: 100%; margin-top: 0.75rem;">Stitch & Render Sequence 🎥</button>
+          </div>
+
+          <div id="presetFramesSection">
+            <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Preset Frame Cards</h4>
+            <div class="effects-grid">
+              <div class="effect-card" data-frame="polaroid" onclick="applyFrameChoice('polaroid')">
+                <h4>📸 Polaroid Border</h4>
+                <p>Classic instant photo frame with extra bottom space.</p>
+              </div>
+              <div class="effect-card" data-frame="film" onclick="applyFrameChoice('film')">
+                <h4>🎞️ Vintage Film Strip</h4>
+                <p>Black movie film reel border with sprocket holes.</p>
+              </div>
+              <div class="effect-card" data-frame="neon" onclick="applyFrameChoice('neon')">
+                <h4>⚡ Cyberpunk Neon</h4>
+                <p>Glowing cyan & magenta double neon border.</p>
+              </div>
+              <div class="effect-card" data-frame="gilded_gold" onclick="applyFrameChoice('gilded_gold')">
+                <h4>👑 Gilded Gold Wood</h4>
+                <p>Ornamental golden wooden frame with bevel edge.</p>
+              </div>
+              <div class="effect-card" data-frame="comic_vignette" onclick="applyFrameChoice('comic_vignette')">
+                <h4>💬 Comic Vignette</h4>
+                <p>Classic pop comic book panel outline border.</p>
+              </div>
+              <div class="effect-card" data-frame="matrix_hud" onclick="applyFrameChoice('matrix_hud')">
+                <h4>🤖 Matrix HUD Brackets</h4>
+                <p>Glowing electric green targeting HUD corner brackets.</p>
+              </div>
+              <div class="effect-card" data-frame="art_deco" onclick="applyFrameChoice('art_deco')">
+                <h4>⚜️ Art Deco Geometric</h4>
+                <p>Sleek gold geometric Art Deco border framing.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Image & Video Resizer View -->
+        <div class="panel-section tool-view" id="viewResizer" style="display: none;">
+          <h2 id="resizerTitleHeading">Canvas Resizer Studio</h2>
+          <p id="resizerSubText" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Resize photo or video canvas dimensions with high-precision Lanczos4 interpolation.</p>
+          
+          <div class="params-container" style="margin-bottom: 1rem;">
+            <div style="display: flex; gap: 0.5rem;">
+              <div class="param-field" style="flex: 1;">
+                <label style="font-size: 0.75rem;">Width (px)</label>
+                <input type="number" id="resizeWidthInput" min="10" max="8000" value="1920" style="background: rgba(15,23,42,0.9); color:#fff; border:1px solid var(--panel-border); padding:0.4rem; border-radius:6px; font-size:0.85rem; font-weight:600;">
+              </div>
+              <div class="param-field" style="flex: 1;">
+                <label style="font-size: 0.75rem;">Height (px)</label>
+                <input type="number" id="resizeHeightInput" min="10" max="8000" value="1080" style="background: rgba(15,23,42,0.9); color:#fff; border:1px solid var(--panel-border); padding:0.4rem; border-radius:6px; font-size:0.85rem; font-weight:600;">
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem;">
+              <input type="checkbox" id="aspectRatioLock" checked style="width:16px; height:16px; accent-color:var(--accent-cyan);">
+              <label for="aspectRatioLock" style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">🔒 Maintain Aspect Ratio</label>
+            </div>
+
+            <div class="param-field" style="margin-top: 0.6rem;">
+              <label style="font-size: 0.75rem;">Interpolation Quality</label>
+              <select id="resizeInterpolationSelect">
+                <option value="lanczos4">🎯 Lanczos4 (Sharpest HD Detail)</option>
+                <option value="cubic">💧 Cubic Spline (Smooth Gradients)</option>
+                <option value="linear">⚡ Bilinear (Fast Balanced)</option>
+                <option value="nearest">👾 Nearest Neighbor (Pixel Art)</option>
+              </select>
+            </div>
+
+            <button class="btn primary" id="triggerResizeBtn" style="width: 100%; margin-top: 0.75rem;">Apply Image Resize 📐</button>
+          </div>
+
+          <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Preset Aspect Ratio Cards</h4>
+          <div class="effects-grid">
+            <div class="effect-card" onclick="applyPresetResize(1080, 1080)">
+              <h4>📱 Instagram Post</h4>
+              <p>Square 1:1 format (1080 × 1080 px)</p>
+            </div>
+            <div class="effect-card" onclick="applyPresetResize(1080, 1920)">
+              <h4>📲 Story / Reel</h4>
+              <p>Portrait 9:16 format (1080 × 1920 px)</p>
+            </div>
+            <div class="effect-card" onclick="applyPresetResize(1920, 1080)">
+              <h4>📺 HD YouTube</h4>
+              <p>Landscape 16:9 format (1920 × 1080 px)</p>
+            </div>
+            <div class="effect-card" onclick="applyPresetResize(1584, 396)">
+              <h4>💼 LinkedIn Banner</h4>
+              <p>Banner 4:1 format (1584 × 396 px)</p>
+            </div>
+            <div class="effect-card" onclick="applyPresetResize(1024, 768)">
+              <h4>🖼️ Classic Photo</h4>
+              <p>Standard 4:3 format (1024 × 768 px)</p>
+            </div>
+            <div class="effect-card" onclick="applyPresetResize(512, 512)">
+              <h4>👤 Profile Avatar</h4>
+              <p>Avatar 1:1 format (512 × 512 px)</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Panel: Canvas & Viewer -->
+      <section class="viewer-area">
+        <!-- Photo Drag-and-Drop Box -->
+        <div class="upload-dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/*" hidden>
+          <div class="dropzone-content">
+            <div class="upload-icon">📸</div>
+            <h3>Drag & Drop your image here</h3>
+            <p>or click to browse from your device (PNG, JPG, WEBP)</p>
+            <button class="btn primary" onclick="document.getElementById('fileInput').click()">Choose Image File</button>
+          </div>
+        </div>
+
+        <!-- Video & GIF Drag-and-Drop Box -->
+        <div class="upload-dropzone" id="videoDropzone" style="display: none;">
+          <input type="file" id="videoFileInput" accept="video/*,image/gif,.gif,.mp4,.webm,.avi,.mov,.mkv,.wmv,.ogv,.flv" hidden>
+          <div class="dropzone-content">
+            <div class="upload-icon">🎥</div>
+            <h3>Drag & Drop your video or GIF clip here</h3>
+            <p>or click to browse from your device (MP4, GIF, WebM, AVI, MOV, MKV, WMV)</p>
+            <button class="btn primary" onclick="document.getElementById('videoFileInput').click()">Choose Media File</button>
+          </div>
+        </div>
+
+        <!-- Interactive Photo Comparison Canvas Studio -->
+        <div class="canvas-container" id="canvasContainer" style="display: none;">
+          <div class="toolbar">
+            <div class="active-effect-info">
+              <span id="currentEffectName">Graphite Pencil Sketch</span>
+              <span class="status-indicator" id="statusIndicator">Ready</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn secondary" id="undoBtn" title="Undo Last Edit">↩️ Undo</button>
+              <button class="btn secondary" id="redoBtn" title="Redo Edit">↪️ Redo</button>
+              <button class="btn secondary" id="reuploadBtn">Change Photo</button>
+              <a id="downloadBtn" class="btn primary" download="artcv_styled.jpg">Download Art 💾</a>
+            </div>
+          </div>
+
+          <!-- Image Studio Workspace Canvas -->
+          <div class="comparison-slider" id="comparisonSlider">
+            <div class="img-wrapper original-wrapper">
+              <img id="originalImg" src="" alt="Original Image">
+              <span class="img-label">Original Photo</span>
+            </div>
+            <div class="img-wrapper styled-wrapper" id="styledWrapper">
+              <img id="styledImg" src="" alt="Styled Image">
+              <span class="img-label styled">Styled Art</span>
+            </div>
+            <div class="slider-divider" id="sliderDivider">
+              <div class="divider-handle">↔</div>
+            </div>
+
+            <!-- Overlay Drawing Canvas Layer -->
+            <canvas id="drawingCanvas" class="drawing-overlay" style="display: none;"></canvas>
+          </div>
+        </div>
+
+        <!-- Interactive Video & GIF Preview Canvas -->
+        <div class="canvas-container" id="videoCanvasContainer" style="display: none;">
+          <div class="toolbar">
+            <div class="active-effect-info">
+              <span id="videoCurrentEffectName">Graphite Pencil Sketch</span>
+              <span class="status-indicator" id="videoStatusIndicator">Ready</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn secondary" id="videoReuploadBtn">Change Media</button>
+              <a id="videoDownloadBtn" class="btn primary" download="artcv_styled_media">Download Media 💾</a>
+            </div>
+          </div>
+
+          <!-- Progress Bar for Video/GIF Rendering -->
+          <div class="video-progress-bar-container" id="videoProgressContainer" style="display: none;">
+            <div class="video-progress-bar" id="videoProgressBar"></div>
+            <span class="video-progress-text" id="videoProgressText">Processing frames...</span>
+          </div>
+
+          <!-- Media Preview (Supports Video & Animated GIF) -->
+          <div class="video-player-grid">
+            <div class="video-box" id="origMediaContainer">
+              <span class="video-box-label">Original Media</span>
+              <video id="originalVideoPlayer" controls playsinline style="display: block;"></video>
+              <img id="originalGifPlayer" src="" style="display: none; width:100%; height:100%; object-fit:contain;" alt="Original GIF">
+            </div>
+            <div class="video-box" id="styledMediaContainer">
+              <span class="video-box-label styled">Stylized Media Art</span>
+              <video id="styledVideoPlayer" controls autoplay loop playsinline style="display: block;"></video>
+              <img id="styledGifPlayer" src="" style="display: none; width:100%; height:100%; object-fit:contain;" alt="Stylized GIF">
+            </div>
+          </div>
+
+          <!-- VivaCut / Adobe Premiere Style Pro Video Timeline Studio -->
+          <div class="video-timeline-wrapper" id="videoTimelineWrapper">
+            <!-- Timeline Top Control & Action Bar -->
+            <div class="timeline-controls-bar">
+              <div class="timeline-playback-btns">
+                <button class="btn secondary timeline-btn" id="timelinePlayPauseBtn">▶ Play</button>
+                <button class="btn secondary timeline-btn" id="timelineStepBackBtn">⏪ -1s</button>
+                <button class="btn secondary timeline-btn" id="timelineStepFwdBtn">⏩ +1s</button>
+                <span class="timeline-divider"></span>
+                <button class="btn secondary timeline-btn" id="timelineSplitBtn" title="Split Clip at Playhead">✂️ Split</button>
+                <button class="btn secondary timeline-btn" id="timelineZoomOutBtn" title="Zoom Out Timeline">➖</button>
+                <button class="btn secondary timeline-btn" id="timelineZoomInBtn" title="Zoom In Timeline">➕</button>
+              </div>
+              <div class="timeline-time-badge">
+                ⏱️ <span id="timelineCurrentTime">00:00.0</span> / <span id="timelineDuration">00:00.0</span>
+              </div>
+            </div>
+
+            <!-- Pro Multi-Track Stack & Time Ruler -->
+            <div class="timeline-editor-box">
+              <!-- Timecode Ruler Header -->
+              <div class="timeline-ruler-header" id="timelineRulerHeader">
+                <div class="ruler-track-header">TRACKS</div>
+                <div class="ruler-ticks-container" id="rulerTicksContainer">
+                  <!-- Time ticks generated dynamically -->
+                </div>
+              </div>
+
+              <!-- Multi-Track Container -->
+              <div class="timeline-track-container" id="timelineTrackContainer">
+                <!-- Red Playhead Needle -->
+                <div class="timeline-playhead-line" id="timelinePlayhead">
+                  <div class="playhead-diamond"></div>
+                </div>
+
+                <!-- Track 1: Video Sequence (V1) -->
+                <div class="timeline-track-row">
+                  <div class="track-info-badge v1">
+                    <span class="track-code">V1</span>
+                    <span class="track-title">Video Clips</span>
+                  </div>
+                  <div class="timeline-track clips-track" id="timelineClipsTrack">
+                    <!-- Clip blocks with trim handles -->
+                  </div>
+                </div>
+
+                <!-- Track 2: Stickers & Overlays (S1) -->
+                <div class="timeline-track-row">
+                  <div class="track-info-badge s1">
+                    <span class="track-code">S1</span>
+                    <span class="track-title">Stickers / FX</span>
+                  </div>
+                  <div class="timeline-track stickers-track" id="timelineStickersTrack">
+                    <!-- Sticker blocks with trim handles -->
+                  </div>
+                </div>
+
+                <!-- Track 3: Artistic Filter (FX) -->
+                <div class="timeline-track-row">
+                  <div class="track-info-badge fx">
+                    <span class="track-code">FX</span>
+                    <span class="track-title">Artistic Filter</span>
+                  </div>
+                  <div class="timeline-track fx-track" id="timelineFxTrack">
+                    <!-- Filter coverage block -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

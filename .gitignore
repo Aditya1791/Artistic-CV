@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.python/
+.venv/
+env/
+venv/
+ENV/
+
+# OpenCV / FastAPI Temp Output
+*.mp4
+*.avi
+*.gif
+*.jpg
+*.png
+!assets/*.jpg
+!static/previews/*.jpg
+!static/favicon.ico
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
