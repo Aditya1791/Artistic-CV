@@ -19,6 +19,11 @@ ENV/
 !static/previews/*.jpg
 !static/favicon.ico
 
+# Database & Storage
+artcv.db
+uploads/
+.env
+
 # IDE & OS
 .vscode/
 .idea/

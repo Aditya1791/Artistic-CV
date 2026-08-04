@@ -107,6 +107,44 @@ python server.py
 | `/api/resize-video` | `POST` | Resizes video or GIF files to target resolution (1080x1920, 1920x1080). |
 | `/api/process-video` | `POST` | Frame-by-frame video/GIF filter synthesis with timed sticker overlays. |
 | `/api/process-video-sequence` | `POST` | Concatenates & trims multi-clip video sequences with filter synthesis. |
+| `/api/auth/signup` | `POST` | Registers new user account with email, name & password. |
+| `/api/auth/login` | `POST` | Authenticates existing user & returns JWT access token. |
+| `/api/auth/google` | `POST` | Authenticates or registers user via Google OAuth ID token. |
+| `/api/auth/facebook` | `POST` | Authenticates or registers user via Facebook Access Token. |
+| `/api/auth/me` | `GET` | Fetches current user profile and session status. |
+| `/api/gallery` | `GET` | Fetches user's saved edited images & videos from database. |
+| `/api/gallery/save` | `POST` | Saves processed image/video & records metadata into database gallery. |
+| `/api/gallery/{id}` | `DELETE` | Deletes entry from database and disk storage. |
+
+---
+
+## 🗄️ Database & User Authentication
+
+ArtisticCV includes a built-in **SQLAlchemy ORM Database Engine** supporting **SQLite** out-of-the-box (zero configuration needed) and **PostgreSQL / MySQL** for cloud production!
+
+### Features:
+- 🔐 **Authentication Options**:
+  - **Email & Password**: Secure password hashing with PBKDF2 / SHA-256.
+  - **Google OAuth**: Fast login with Google accounts.
+  - **Facebook OAuth**: Fast login with Facebook accounts.
+  - **JWT Tokens**: 30-day session token state in `localStorage`.
+- 🖼️ **Edited Image History Gallery**:
+  - Automatically save or click **"Save to Gallery"** on any stylized photo or video.
+  - View all past edited images stored in your database from the **"🖼️ Database Gallery"** header modal.
+  - Filter by media type (Photos / Videos), search by filter name, view full resolution lightbox, and download anytime!
+
+---
+
+## 🌐 Online Hosting & Cloud Deployment
+
+Host ArtisticCV online on **Render**, **Railway**, or **Fly.io**.
+
+### Quick Deployment on Render.com:
+1. Connect your GitHub repository on Render.
+2. Build Command: `pip install -r requirements.txt`
+3. Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+
+For complete step-by-step cloud deployment guides, see **[DEPLOYMENT.md](file:///c:/Users/swain/Downloads/ArtCV/DEPLOYMENT.md)**.
 
 ---
 

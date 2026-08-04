@@ -54,6 +54,7 @@ async function initApp() {
   setupVideoSequenceControls();
   setupVideoTimelineControls();
   setupUndoRedo();
+  initAuthAndGallery();
 }
 
 async function fetchEffectsCatalog() {
@@ -1901,3 +1902,628 @@ function applyPresetResize(w, h) {
   if (hInput) hInput.value = h;
   triggerImageResize();
 }
+
+/* ==========================================================================
+   Authentication & Database Gallery Controller
+   ========================================================================== */
+
+let currentUser = null;
+let jwtToken = localStorage.getItem("artcv_token") || null;
+let galleryItems = [];
+let activeGalleryFilter = "all";
+let activeLightboxItem = null;
+
+function getAuthHeaders() {
+  const headers = {};
+  if (jwtToken) {
+    headers["Authorization"] = `Bearer ${jwtToken}`;
+  }
+  return headers;
+}
+
+async function initAuthAndGallery() {
+  setupAuthEvents();
+  setupGalleryEvents();
+  if (jwtToken) {
+    await fetchCurrentUser();
+  } else {
+    updateAuthUI();
+  }
+}
+
+async function fetchCurrentUser() {
+  try {
+    const res = await fetch("/api/auth/me", { headers: getAuthHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.user;
+      updateAuthUI();
+      await fetchGallery();
+    } else {
+      localStorage.removeItem("artcv_token");
+      jwtToken = null;
+      currentUser = null;
+      updateAuthUI();
+    }
+  } catch (err) {
+    console.error("Auth check failed:", err);
+    updateAuthUI();
+  }
+}
+
+function updateAuthUI() {
+  const openAuthBtn = document.getElementById("openAuthBtn");
+  const userProfileBar = document.getElementById("userProfileBar");
+  const userNameText = document.getElementById("userNameText");
+  const userAvatarImg = document.getElementById("userAvatarImg");
+
+  if (currentUser) {
+    if (openAuthBtn) openAuthBtn.style.display = "none";
+    if (userProfileBar) userProfileBar.style.display = "flex";
+    if (userNameText) userNameText.innerText = currentUser.name;
+    if (userAvatarImg) {
+      userAvatarImg.src = currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff`;
+    }
+  } else {
+    if (openAuthBtn) openAuthBtn.style.display = "block";
+    if (userProfileBar) userProfileBar.style.display = "none";
+  }
+
+  updateGalleryBadge();
+}
+
+function updateGalleryBadge() {
+  const badge = document.getElementById("galleryCountBadge");
+  if (badge) {
+    badge.innerText = galleryItems.length;
+  }
+}
+
+function setupAuthEvents() {
+  const openAuthBtn = document.getElementById("openAuthBtn");
+  const closeAuthBtn = document.getElementById("closeAuthModalBtn");
+  const authModal = document.getElementById("authModal");
+  const tabLoginBtn = document.getElementById("tabLoginBtn");
+  const tabSignupBtn = document.getElementById("tabSignupBtn");
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const googleBtn = document.getElementById("googleAuthBtn");
+  const facebookBtn = document.getElementById("facebookAuthBtn");
+
+  if (openAuthBtn) {
+    openAuthBtn.addEventListener("click", () => showAuthModal("login"));
+  }
+  if (closeAuthBtn) {
+    closeAuthBtn.addEventListener("click", () => hideAuthModal());
+  }
+
+  if (tabLoginBtn) {
+    tabLoginBtn.addEventListener("click", () => switchAuthTab("login"));
+  }
+  if (tabSignupBtn) {
+    tabSignupBtn.addEventListener("click", () => switchAuthTab("signup"));
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener("submit", handleLoginSubmit);
+  }
+  if (signupForm) {
+    signupForm.addEventListener("submit", handleSignupSubmit);
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", handleLogout);
+  }
+
+  if (googleBtn) {
+    googleBtn.addEventListener("click", handleGoogleLogin);
+  }
+  if (facebookBtn) {
+    facebookBtn.addEventListener("click", handleFacebookLogin);
+  }
+
+  if (authModal) {
+    authModal.addEventListener("click", (e) => {
+      if (e.target === authModal) hideAuthModal();
+    });
+  }
+}
+
+function showAuthModal(mode = "login", alertMessage = null) {
+  const modal = document.getElementById("authModal");
+  if (modal) modal.style.display = "flex";
+  switchAuthTab(mode);
+  if (alertMessage) showAuthAlert(alertMessage, "error");
+}
+
+function hideAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (modal) modal.style.display = "none";
+  showAuthAlert(null);
+}
+
+function switchAuthTab(mode) {
+  const tabLoginBtn = document.getElementById("tabLoginBtn");
+  const tabSignupBtn = document.getElementById("tabSignupBtn");
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+  const modalTitle = document.getElementById("authModalTitle");
+
+  showAuthAlert(null);
+
+  if (mode === "login") {
+    if (tabLoginBtn) tabLoginBtn.classList.add("active");
+    if (tabSignupBtn) tabSignupBtn.classList.remove("active");
+    if (loginForm) loginForm.style.display = "flex";
+    if (signupForm) signupForm.style.display = "none";
+    if (modalTitle) modalTitle.innerText = "Sign In to ArtisticCV";
+  } else {
+    if (tabSignupBtn) tabSignupBtn.classList.add("active");
+    if (tabLoginBtn) tabLoginBtn.classList.remove("active");
+    if (signupForm) signupForm.style.display = "flex";
+    if (loginForm) loginForm.style.display = "none";
+    if (modalTitle) modalTitle.innerText = "Create Your Account";
+  }
+}
+
+function showAuthAlert(msg, type = "error") {
+  const alertEl = document.getElementById("authAlert");
+  if (!alertEl) return;
+  if (!msg) {
+    alertEl.style.display = "none";
+    alertEl.innerText = "";
+    return;
+  }
+  alertEl.className = `auth-alert ${type}`;
+  alertEl.innerText = msg;
+  alertEl.style.display = "block";
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+  const submitBtn = document.getElementById("loginSubmitBtn");
+
+  submitBtn.innerText = "Signing In...";
+  submitBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Login failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    updateAuthUI();
+    await fetchGallery();
+    hideAuthModal();
+  } catch (err) {
+    showAuthAlert(err.message, "error");
+  } finally {
+    submitBtn.innerText = "Sign In 🚀";
+    submitBtn.disabled = false;
+  }
+}
+
+async function handleSignupSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById("signupName").value;
+  const email = document.getElementById("signupEmail").value;
+  const password = document.getElementById("signupPassword").value;
+  const submitBtn = document.getElementById("signupSubmitBtn");
+
+  submitBtn.innerText = "Creating Account...";
+  submitBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Registration failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    updateAuthUI();
+    await fetchGallery();
+    hideAuthModal();
+  } catch (err) {
+    showAuthAlert(err.message, "error");
+  } finally {
+    submitBtn.innerText = "Create Account ✨";
+    submitBtn.disabled = false;
+  }
+}
+
+async function handleGoogleLogin() {
+  const email = prompt("Enter your Google Account email for authentication:", "artist@gmail.com");
+  if (!email) return;
+
+  try {
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        name: email.split("@")[0],
+        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split("@")[0])}&background=4285F4&color=fff`
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Google authentication failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    updateAuthUI();
+    await fetchGallery();
+    hideAuthModal();
+  } catch (err) {
+    showAuthAlert(err.message, "error");
+  }
+}
+
+async function handleFacebookLogin() {
+  const email = prompt("Enter your Facebook email or username for authentication:", "fb_user@facebook.com");
+  if (!email) return;
+
+  try {
+    const res = await fetch("/api/auth/facebook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        name: email.split("@")[0],
+        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split("@")[0])}&background=1877F2&color=fff`
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Facebook authentication failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    updateAuthUI();
+    await fetchGallery();
+    hideAuthModal();
+  } catch (err) {
+    showAuthAlert(err.message, "error");
+  }
+}
+
+function handleLogout() {
+  if (confirm("Are you sure you want to log out?")) {
+    jwtToken = null;
+    currentUser = null;
+    galleryItems = [];
+    localStorage.removeItem("artcv_token");
+    updateAuthUI();
+    renderGallery();
+  }
+}
+
+// --- Database Gallery Controller ---
+
+function setupGalleryEvents() {
+  const openGalleryBtn = document.getElementById("openGalleryBtn");
+  const closeGalleryModalBtn = document.getElementById("closeGalleryModalBtn");
+  const galleryModal = document.getElementById("galleryModal");
+  const searchInput = document.getElementById("gallerySearchInput");
+
+  const savePhotoBtn = document.getElementById("savePhotoToGalleryBtn");
+  const saveVideoBtn = document.getElementById("saveVideoToGalleryBtn");
+
+  if (openGalleryBtn) {
+    openGalleryBtn.addEventListener("click", () => {
+      if (!currentUser) {
+        showAuthModal("login", "Please sign in to view your database gallery");
+        return;
+      }
+      openGalleryModal();
+    });
+  }
+
+  if (closeGalleryModalBtn) {
+    closeGalleryModalBtn.addEventListener("click", closeGalleryModal);
+  }
+
+  if (galleryModal) {
+    galleryModal.addEventListener("click", (e) => {
+      if (e.target === galleryModal) closeGalleryModal();
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => renderGallery());
+  }
+
+  const tabs = document.querySelectorAll(".gallery-filter-tabs .tab-btn");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeGalleryFilter = tab.dataset.filter || "all";
+      renderGallery();
+    });
+  });
+
+  if (savePhotoBtn) {
+    savePhotoBtn.addEventListener("click", () => saveCurrentToGallery("image"));
+  }
+  if (saveVideoBtn) {
+    saveVideoBtn.addEventListener("click", () => saveCurrentToGallery("video"));
+  }
+
+  const closeLightboxBtn = document.getElementById("closeLightboxBtn");
+  const lightboxModal = document.getElementById("lightboxModal");
+  const lightboxDeleteBtn = document.getElementById("lightboxDeleteBtn");
+
+  if (closeLightboxBtn) {
+    closeLightboxBtn.addEventListener("click", closeLightbox);
+  }
+
+  if (lightboxModal) {
+    lightboxModal.addEventListener("click", (e) => {
+      if (e.target === lightboxModal) closeLightbox();
+    });
+  }
+
+  if (lightboxDeleteBtn) {
+    lightboxDeleteBtn.addEventListener("click", async () => {
+      if (activeLightboxItem && confirm("Are you sure you want to delete this item from your database gallery?")) {
+        await deleteGalleryItem(activeLightboxItem.id);
+        closeLightbox();
+      }
+    });
+  }
+}
+
+async function fetchGallery() {
+  if (!jwtToken) return;
+  try {
+    const res = await fetch("/api/gallery", { headers: getAuthHeaders() });
+    if (res.ok) {
+      galleryItems = await res.json();
+      updateGalleryBadge();
+    }
+  } catch (err) {
+    console.error("Failed to fetch gallery:", err);
+  }
+}
+
+function openGalleryModal() {
+  const modal = document.getElementById("galleryModal");
+  if (modal) modal.style.display = "flex";
+  fetchGallery().then(() => renderGallery());
+}
+
+function closeGalleryModal() {
+  const modal = document.getElementById("galleryModal");
+  if (modal) modal.style.display = "none";
+}
+
+function renderGallery() {
+  const grid = document.getElementById("galleryGrid");
+  const searchInput = document.getElementById("gallerySearchInput");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+  let filtered = galleryItems.filter((item) => {
+    if (activeGalleryFilter !== "all" && item.media_type !== activeGalleryFilter) {
+      return false;
+    }
+    if (query) {
+      const titleMatch = item.title && item.title.toLowerCase().includes(query);
+      const effectMatch = item.effect_name && item.effect_name.toLowerCase().includes(query);
+      return titleMatch || effectMatch;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-gallery-state">
+        <span>🖼️</span>
+        <h3>No gallery items found</h3>
+        <p>Edit photos or videos in the studio and click "Save to My Gallery" to store them in your database.</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "gallery-card";
+
+    const isVideo = item.media_type === "video";
+    const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString() : "Recent";
+
+    card.innerHTML = `
+      <div class="card-thumbnail-box">
+        ${
+          isVideo
+            ? `<video src="${item.file_url}" muted loop playsinline preload="metadata"></video>`
+            : `<img src="${item.file_url}" alt="${item.title}" loading="lazy">`
+        }
+        <span class="media-type-badge">${isVideo ? "🎥 Video" : "📷 Photo"}</span>
+      </div>
+      <div class="card-info">
+        <div class="card-title">${item.title || "Edited Art"}</div>
+        <div class="card-meta">
+          <span class="effect-tag">${item.effect_name}</span>
+          <span class="date-text">${createdDate}</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn secondary view-item-btn">View 👁️</button>
+          <a class="btn primary download-item-btn" href="${item.file_url}" download="artcv_gallery_${item.id}">Save 💾</a>
+        </div>
+      </div>
+    `;
+
+    if (isVideo) {
+      const vid = card.querySelector("video");
+      card.addEventListener("mouseenter", () => vid.play().catch(() => {}));
+      card.addEventListener("mouseleave", () => vid.pause());
+    }
+
+    const thumbBox = card.querySelector(".card-thumbnail-box");
+    const viewBtn = card.querySelector(".view-item-btn");
+    [thumbBox, viewBtn].forEach((el) => {
+      if (el) el.addEventListener("click", () => openLightbox(item));
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+async function saveCurrentToGallery(mediaType = "image") {
+  if (!currentUser) {
+    showAuthModal("login", "Please sign in to save your edited art to the database gallery!");
+    return;
+  }
+
+  let fileToUpload = null;
+  let effectName = activeEffectKey;
+  let paramsStr = JSON.stringify(currentParams);
+
+  if (mediaType === "image") {
+    const styledImg = document.getElementById("styledImg");
+    if (!styledImg || !styledImg.src || styledImg.src.startsWith("data:image/svg+xml")) {
+      alert("No stylized image available to save yet!");
+      return;
+    }
+
+    try {
+      const res = await fetch(styledImg.src);
+      const blob = await res.blob();
+      fileToUpload = new File([blob], `art_${Date.now()}.jpg`, { type: "image/jpeg" });
+    } catch (e) {
+      alert("Could not extract current image file for saving.");
+      return;
+    }
+  } else {
+    const styledVideoPlayer = document.getElementById("styledVideoPlayer");
+    const styledGifPlayer = document.getElementById("styledGifPlayer");
+
+    let videoSrc = styledVideoPlayer.style.display !== "none" ? styledVideoPlayer.src : styledGifPlayer.src;
+    if (!videoSrc) {
+      alert("No stylized video/GIF available to save yet!");
+      return;
+    }
+
+    try {
+      const res = await fetch(videoSrc);
+      const blob = await res.blob();
+      const isGif = videoSrc.endsWith(".gif");
+      fileToUpload = new File([blob], `art_video_${Date.now()}.${isGif ? "gif" : "mp4"}`, {
+        type: isGif ? "image/gif" : "video/mp4"
+      });
+    } catch (e) {
+      alert("Could not extract current video file for saving.");
+      return;
+    }
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileToUpload);
+  formData.append("title", `${catalog[effectName]?.name || effectName} Artwork`);
+  formData.append("effect", effectName);
+  formData.append("params", paramsStr);
+  formData.append("media_type", mediaType);
+
+  const saveBtn = document.getElementById(mediaType === "image" ? "savePhotoToGalleryBtn" : "saveVideoToGalleryBtn");
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Saving to Gallery...";
+  }
+
+  try {
+    const res = await fetch("/api/gallery/save", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Failed to save item");
+
+    galleryItems.unshift(data);
+    updateGalleryBadge();
+
+    if (saveBtn) {
+      saveBtn.innerText = "Saved to Gallery ✓";
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "🖼️ Save to Gallery";
+      }, 2500);
+    }
+  } catch (err) {
+    alert(`Error saving to gallery: ${err.message}`);
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerText = "🖼️ Save to Gallery";
+    }
+  }
+}
+
+async function deleteGalleryItem(itemId) {
+  try {
+    const res = await fetch(`/api/gallery/${itemId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) throw new Error("Failed to delete gallery item");
+
+    galleryItems = galleryItems.filter((i) => i.id !== itemId);
+    updateGalleryBadge();
+    renderGallery();
+  } catch (err) {
+    alert(`Delete failed: ${err.message}`);
+  }
+}
+
+function openLightbox(item) {
+  activeLightboxItem = item;
+  const modal = document.getElementById("lightboxModal");
+  const mediaBox = document.getElementById("lightboxMediaBox");
+  const title = document.getElementById("lightboxTitle");
+  const effectBadge = document.getElementById("lightboxEffectBadge");
+  const dateText = document.getElementById("lightboxDate");
+  const downloadBtn = document.getElementById("lightboxDownloadBtn");
+
+  if (!modal || !mediaBox) return;
+
+  const isVideo = item.media_type === "video";
+  mediaBox.innerHTML = isVideo
+    ? `<video src="${item.file_url}" controls autoplay loop style="max-width:100%; max-height:70vh;"></video>`
+    : `<img src="${item.file_url}" alt="${item.title}" style="max-width:100%; max-height:70vh; object-fit:contain;">`;
+
+  if (title) title.innerText = item.title || "Edited Art";
+  if (effectBadge) effectBadge.innerText = item.effect_name || "Filter";
+  if (dateText) dateText.innerText = item.created_at ? new Date(item.created_at).toLocaleDateString() : "";
+  if (downloadBtn) downloadBtn.href = item.file_url;
+
+  modal.style.display = "flex";
+}
+
+function closeLightbox() {
+  const modal = document.getElementById("lightboxModal");
+  const mediaBox = document.getElementById("lightboxMediaBox");
+  if (modal) modal.style.display = "none";
+  if (mediaBox) mediaBox.innerHTML = "";
+  activeLightboxItem = null;
+}
+

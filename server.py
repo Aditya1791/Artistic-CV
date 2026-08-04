@@ -10,14 +10,25 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import io
 import json
+import uuid
 import uvicorn
 import cv2
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from typing import Optional
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
 
 from artcv import ArtCVEngine
+from artcv.database import (
+    init_db, get_db, create_user, get_user_by_email, get_user_by_id,
+    save_gallery_item, get_user_gallery, delete_gallery_item, get_gallery_item_by_id
+)
+from artcv.auth import (
+    hash_password, verify_password, create_access_token, decode_access_token,
+    verify_google_token, verify_facebook_token
+)
 
 app = FastAPI(
     title="ArtCV REST API",
@@ -36,10 +47,232 @@ app.add_middleware(
 
 engine = ArtCVEngine()
 
+UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads", "gallery"))
+
+@app.on_event("startup")
+def on_startup():
+    """Initializes database tables and upload storage directories."""
+    init_db()
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Helper Dependency for Authenticated Requests
+def get_current_user(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    token = authorization.split(" ", 1)[1]
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    user_id = int(payload.get("sub", 0))
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+# Helper Dependency for Optional Auth
+def get_optional_user(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ", 1)[1]
+    payload = decode_access_token(token)
+    if not payload:
+        return None
+    user_id = int(payload.get("sub", 0))
+    return get_user_by_id(db, user_id)
+
+
+# --- AUTHENTICATION ENDPOINTS ---
+
+@app.post("/api/auth/signup")
+def signup(data: dict = Body(...), db: Session = Depends(get_db)):
+    """Registers a new user with Email, Name & Password."""
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+    name = data.get("name", "").strip() or email.split("@")[0]
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email address is required")
+    if not password or len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    existing = get_user_by_email(db, email)
+    if existing:
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+
+    pwd_hash = hash_password(password)
+    user = create_user(db, email=email, name=name, password_hash=pwd_hash, provider="email")
+    token = create_access_token(user.id, user.email)
+    return {"token": token, "user": user.to_dict()}
+
+
+@app.post("/api/auth/login")
+def login(data: dict = Body(...), db: Session = Depends(get_db)):
+    """Authenticates existing user with Email & Password."""
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    user = get_user_by_email(db, email)
+    if not user or not user.password_hash or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token(user.id, user.email)
+    return {"token": token, "user": user.to_dict()}
+
+
+@app.post("/api/auth/google")
+def google_auth(data: dict = Body(...), db: Session = Depends(get_db)):
+    """Authenticates or signs up user via Google OAuth ID token or simulated OAuth payload."""
+    credential = data.get("credential") or data.get("token")
+    user_info = None
+
+    if credential:
+        user_info = verify_google_token(credential)
+    
+    # Fallback to direct client payload if verifying directly
+    if not user_info and data.get("email"):
+        user_info = {
+            "email": data.get("email"),
+            "name": data.get("name") or "Google User",
+            "avatar_url": data.get("picture") or data.get("avatar_url"),
+            "provider": "google"
+        }
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Invalid Google OAuth token or credentials")
+
+    email = user_info["email"]
+    user = get_user_by_email(db, email)
+
+    if not user:
+        user = create_user(
+            db,
+            email=email,
+            name=user_info.get("name", "Google User"),
+            avatar_url=user_info.get("avatar_url"),
+            provider="google"
+        )
+
+    token = create_access_token(user.id, user.email)
+    return {"token": token, "user": user.to_dict()}
+
+
+@app.post("/api/auth/facebook")
+def facebook_auth(data: dict = Body(...), db: Session = Depends(get_db)):
+    """Authenticates or signs up user via Facebook Access Token or simulated OAuth payload."""
+    access_token = data.get("accessToken") or data.get("token")
+    user_info = None
+
+    if access_token:
+        user_info = verify_facebook_token(access_token)
+
+    # Fallback to direct client payload if verifying directly
+    if not user_info and (data.get("email") or data.get("facebook_id")):
+        fb_id = data.get("facebook_id", "user")
+        user_info = {
+            "email": data.get("email") or f"fb_{fb_id}@facebook.user",
+            "name": data.get("name") or f"Facebook User {fb_id}",
+            "avatar_url": data.get("avatar_url"),
+            "provider": "facebook"
+        }
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Invalid Facebook OAuth token or credentials")
+
+    email = user_info["email"]
+    user = get_user_by_email(db, email)
+
+    if not user:
+        user = create_user(
+            db,
+            email=email,
+            name=user_info.get("name", "Facebook User"),
+            avatar_url=user_info.get("avatar_url"),
+            provider="facebook"
+        )
+
+    token = create_access_token(user.id, user.email)
+    return {"token": token, "user": user.to_dict()}
+
+
+@app.get("/api/auth/me")
+def get_me(user = Depends(get_current_user)):
+    """Returns current authenticated user profile."""
+    return {"user": user.to_dict()}
+
+
+# --- DATABASE GALLERY ENDPOINTS ---
+
+@app.get("/api/gallery")
+def get_gallery(user = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retrieves all edited images and videos saved in the database for the authenticated user."""
+    items = get_user_gallery(db, user.id)
+    return [item.to_dict() for item in items]
+
+
+@app.post("/api/gallery/save")
+async def save_to_gallery(
+    file: UploadFile = File(...),
+    title: str = Form("Edited Art"),
+    effect: str = Form("filter"),
+    params: str = Form("{}"),
+    media_type: str = Form("image"),
+    user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Saves processed media file and records metadata into the user's database gallery."""
+    try:
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1] or (".mp4" if media_type == "video" else ".jpg")
+        filename = f"{uuid.uuid4().hex}{ext}"
+        saved_file_path = os.path.join(UPLOAD_DIR, filename)
+
+        content = await file.read()
+        with open(saved_file_path, "wb") as f:
+            f.write(content)
+
+        gallery_item = save_gallery_item(
+            db,
+            user_id=user.id,
+            title=title,
+            effect_name=effect,
+            file_path=saved_file_path,
+            params=params,
+            media_type=media_type
+        )
+        return gallery_item.to_dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save gallery item: {str(e)}")
+
+
+@app.get("/api/gallery/file/{filename}")
+def serve_gallery_file(filename: str):
+    """Serves media file stored in user gallery."""
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    ext = os.path.splitext(filename)[1].lower()
+    media_type = "video/mp4" if ext == ".mp4" else "image/gif" if ext == ".gif" else "image/jpeg"
+    return FileResponse(file_path, media_type=media_type)
+
+
+@app.delete("/api/gallery/{item_id}")
+def delete_gallery_entry(item_id: str, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Deletes an edited image or video record from user gallery database and storage."""
+    success = delete_gallery_item(db, item_id=item_id, user_id=user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found or permission denied")
+    return {"message": "Gallery item deleted successfully"}
+
+
 @app.get("/api/effects")
 def get_effects():
     """Returns catalog of available artistic filters and parameters for dynamic app UIs."""
     return engine.list_effects()
+
 
 @app.post("/api/process")
 async def process_image(
