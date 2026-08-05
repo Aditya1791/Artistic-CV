@@ -2388,6 +2388,7 @@ const sampleGoogleAccounts = [
 ];
 
 function openGoogleAccountModal() {
+  hideAuthModal();
   const modal = document.getElementById("googleAccountModal");
   const listEl = document.getElementById("googleAccountsList");
   const closeBtn = document.getElementById("closeGoogleModalBtn");
@@ -2483,6 +2484,7 @@ const sampleFacebookAccounts = [
 ];
 
 function openFacebookAccountModal() {
+  hideAuthModal();
   const modal = document.getElementById("facebookAccountModal");
   const listEl = document.getElementById("facebookAccountsList");
   const closeBtn = document.getElementById("closeFacebookModalBtn");
@@ -2571,15 +2573,15 @@ function handleFacebookLogin(e) {
   }
 }
 
-
-
 async function checkOAuthCallback() {
-  const hash = window.location.hash;
-  if (!hash) return;
+  const hash = window.location.hash ? window.location.hash.substring(1) : "";
+  const search = window.location.search ? window.location.search.substring(1) : "";
+  
+  const hashParams = new URLSearchParams(hash);
+  const searchParams = new URLSearchParams(search);
 
-  const params = new URLSearchParams(hash.substring(1));
-  const idToken = params.get("id_token") || params.get("credential");
-  const accessToken = params.get("access_token");
+  const idToken = hashParams.get("id_token") || hashParams.get("credential") || searchParams.get("id_token") || searchParams.get("credential");
+  const accessToken = hashParams.get("access_token") || searchParams.get("access_token");
 
   if (idToken) {
     try {

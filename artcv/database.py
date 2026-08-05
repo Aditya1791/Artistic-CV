@@ -115,6 +115,21 @@ def get_db():
 
 # Database helper functions
 
+def get_or_create_guest_user(db: Session) -> User:
+    guest = db.query(User).filter(User.email == "guest@artisticcv.app").first()
+    if not guest:
+        guest = User(
+            email="guest@artisticcv.app",
+            name="Guest Creator ⚡",
+            provider="guest",
+            avatar_url="https://ui-avatars.com/api/?name=Guest+Creator&background=ff7e67&color=fff"
+        )
+        db.add(guest)
+        db.commit()
+        db.refresh(guest)
+    return guest
+
+
 def create_user(
     db: Session,
     email: str,
@@ -125,7 +140,7 @@ def create_user(
 ) -> User:
     user = User(
         email=email.lower().strip(),
-        name=name.strip(),
+        name=name,
         password_hash=password_hash,
         avatar_url=avatar_url,
         provider=provider
@@ -134,6 +149,8 @@ def create_user(
     db.commit()
     db.refresh(user)
     return user
+
+
 
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:

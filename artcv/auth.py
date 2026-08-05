@@ -98,12 +98,26 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
 
 def verify_google_token(credential: str) -> Optional[Dict[str, Any]]:
     """
-    Verifies Google ID Token via Google's tokeninfo API.
-    Returns dict with email, name, picture if valid.
+    Verifies Google ID Token or Access Token via Google OAuth APIs.
+    Returns dict with email, name, avatar_url, provider if valid.
     """
+    if not credential:
+        return None
     try:
-        # Verify token using Google OAuth API
+        # Try id_token first via Google tokeninfo
         res = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}", timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            email = data.get("email")
+            if email:
+                return {
+                    "email": email,
+                    "name": data.get("name") or email.split("@")[0],
+                    "avatar_url": data.get("picture"),
+                    "provider": "google"
+                }
+        # Fallback to userinfo via access_token
+        res = requests.get("https://www.googleapis.com/oauth2/v3/userinfo", headers={"Authorization": f"Bearer {credential}"}, timeout=5)
         if res.status_code == 200:
             data = res.json()
             email = data.get("email")
@@ -117,6 +131,7 @@ def verify_google_token(credential: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         print(f"[OAuth Error] Google verification failed: {e}")
     return None
+
 
 
 def verify_facebook_token(access_token: str) -> Optional[Dict[str, Any]]:
