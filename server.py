@@ -203,6 +203,16 @@ def get_me(user = Depends(get_current_user)):
     return {"user": user.to_dict()}
 
 
+@app.get("/api/auth/config")
+def get_auth_config():
+    """Returns public OAuth configuration for client authentication integration."""
+    return {
+        "google_client_id": os.environ.get("GOOGLE_CLIENT_ID", ""),
+        "facebook_app_id": os.environ.get("FACEBOOK_APP_ID", "")
+    }
+
+
+
 # --- DATABASE GALLERY ENDPOINTS ---
 
 @app.get("/api/gallery")
