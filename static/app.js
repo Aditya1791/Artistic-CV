@@ -1200,8 +1200,10 @@ function renderEffectsGrid(category) {
       <div class="effect-card-preview">
         <img src="/previews/${key}.jpg" alt="${info.name}" onerror="this.src='/previews/pencil_sketch.jpg'">
       </div>
-      <h4>${info.name}</h4>
-      <p>${info.description}</p>
+      <div class="effect-card-details">
+        <h4>${info.name}</h4>
+        <p>${info.description}</p>
+      </div>
     `;
     card.addEventListener("click", () => selectEffect(key));
     grid.appendChild(card);

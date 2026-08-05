@@ -168,7 +168,7 @@ body {
 /* Main Workspace Layout with Collapsible Sidebar */
 .workspace {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 260px 1fr;
   flex: 1;
   overflow: hidden;
   transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -322,11 +322,11 @@ body {
   border-color: transparent;
 }
 
-/* Effects Grid with Visual Example Thumbnail Images */
+/* Effects Grid with Visual Example Thumbnail Images - 1 Filter per Row */
 .effects-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
 }
 
 .workspace.collapsed .effects-grid {
@@ -337,19 +337,20 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
-  padding: 0.5rem;
+  padding: 0.45rem 0.6rem;
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.65rem;
   overflow: hidden;
 }
 
 .effect-card:hover {
   background: var(--card-hover);
   border-color: var(--accent-cyan);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .effect-card.active {
@@ -358,10 +359,11 @@ body {
   box-shadow: 0 0 14px rgba(255, 126, 103, 0.3);
 }
 
-/* Visual Example Thumbnail Container Above Filter */
+/* Visual Example Thumbnail Container Beside Filter */
 .effect-card-preview {
-  width: 100%;
-  height: 65px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
   border-radius: 6px;
   overflow: hidden;
   background: #000;
@@ -375,19 +377,37 @@ body {
 }
 
 .effect-card:hover .effect-card-preview img {
-  transform: scale(1.08);
+  transform: scale(1.1);
+}
+
+.effect-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .effect-card h4 {
   font-size: 0.82rem;
   color: var(--text-main);
   font-weight: 600;
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .effect-card p {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
-  line-height: 1.2;
+  line-height: 1.25;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Dynamic Parameters */
