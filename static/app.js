@@ -1947,9 +1947,9 @@ function getAuthHeaders() {
 }
 
 async function initAuthAndGallery() {
-  await fetchOAuthConfig();
   setupAuthEvents();
   setupGalleryEvents();
+  fetchOAuthConfig();
   await checkOAuthCallback();
   if (jwtToken) {
     await fetchCurrentUser();
