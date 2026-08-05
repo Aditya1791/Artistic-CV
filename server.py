@@ -49,6 +49,28 @@ engine = ArtCVEngine()
 
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads", "gallery"))
 
+# Optional Cloudinary Cloud Storage Integration
+try:
+    import cloudinary
+    import cloudinary.uploader
+    CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+    if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+        cloudinary.config(
+            cloud_name=CLOUDINARY_CLOUD_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET,
+            secure=True
+        )
+        HAS_CLOUDINARY = True
+        print(f"[CLOUDINARY] Connected to Cloud Storage Bucket '{CLOUDINARY_CLOUD_NAME}' ☁️")
+    else:
+        HAS_CLOUDINARY = False
+except Exception:
+    HAS_CLOUDINARY = False
+
 @app.on_event("startup")
 def on_startup():
     """Initializes database tables and upload storage directories."""
@@ -234,14 +256,28 @@ async def save_to_gallery(
 ):
     """Saves processed media file and records metadata into the user's database gallery."""
     try:
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        ext = os.path.splitext(file.filename)[1] or (".mp4" if media_type == "video" else ".jpg")
-        filename = f"{uuid.uuid4().hex}{ext}"
-        saved_file_path = os.path.join(UPLOAD_DIR, filename)
-
         content = await file.read()
-        with open(saved_file_path, "wb") as f:
-            f.write(content)
+        saved_file_path = ""
+
+        if HAS_CLOUDINARY:
+            try:
+                res = cloudinary.uploader.upload(
+                    content,
+                    folder=f"artistic_cv/user_{user.id}",
+                    resource_type="video" if media_type == "video" else "image"
+                )
+                saved_file_path = res.get("secure_url") or res.get("url")
+            except Exception as c_err:
+                print(f"[CLOUDINARY WARNING] Upload failed, saving to local disk fallback: {c_err}")
+                saved_file_path = ""
+
+        if not saved_file_path:
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            ext = os.path.splitext(file.filename)[1] or (".mp4" if media_type == "video" else ".jpg")
+            filename = f"{uuid.uuid4().hex}{ext}"
+            saved_file_path = os.path.join(UPLOAD_DIR, filename)
+            with open(saved_file_path, "wb") as f:
+                f.write(content)
 
         gallery_item = save_gallery_item(
             db,

@@ -68,6 +68,11 @@ class GalleryItem(Base):
     owner = relationship("User", back_populates="gallery_items")
 
     def to_dict(self) -> Dict[str, Any]:
+        if self.file_path.startswith("http://") or self.file_path.startswith("https://"):
+            file_url = self.file_path
+        else:
+            file_url = f"/api/gallery/file/{os.path.basename(self.file_path)}"
+
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -75,7 +80,7 @@ class GalleryItem(Base):
             "effect_name": self.effect_name,
             "params": self.params,
             "media_type": self.media_type,
-            "file_url": f"/api/gallery/file/{os.path.basename(self.file_path)}",
+            "file_url": file_url,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
