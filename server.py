@@ -291,8 +291,12 @@ async def process_image(
         output_bytes = engine.process_to_bytes(contents, effect_name=effect, params=param_dict, ext=".jpg")
         return Response(content=output_bytes, media_type="image/jpeg")
     except ValueError as e:
+        print(f"[PROCESS VAL ERROR] {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
+        print(f"[PROCESS ERROR] Effect '{effect}' failed:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
 @app.post("/api/enhance")
@@ -320,6 +324,9 @@ async def enhance_image(
         _, encoded = cv2.imencode(".jpg", res_bgr)
         return Response(content=encoded.tobytes(), media_type="image/jpeg")
     except Exception as e:
+        import traceback
+        print("[ENHANCE ERROR]:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Enhancement error: {str(e)}")
 
 @app.post("/api/inpaint")
@@ -338,6 +345,9 @@ async def inpaint_image(
         _, encoded = cv2.imencode(".jpg", res_bgr)
         return Response(content=encoded.tobytes(), media_type="image/jpeg")
     except Exception as e:
+        import traceback
+        print("[INPAINT ERROR]:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Inpainting error: {str(e)}")
 
 @app.post("/api/frame")
@@ -352,7 +362,11 @@ async def apply_frame(
         _, encoded = cv2.imencode(".jpg", res_bgr)
         return Response(content=encoded.tobytes(), media_type="image/jpeg")
     except Exception as e:
+        import traceback
+        print("[FRAME ERROR]:")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Frame error: {str(e)}")
+
 
 @app.post("/api/pattern-frame")
 async def apply_pattern_frame(
