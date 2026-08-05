@@ -107,9 +107,28 @@ class ArtCVEngine:
     def process_to_bytes(self, input_data, effect_name: str, params: dict = None, ext: str = ".jpg") -> bytes:
         """Processes image and returns encoded byte buffer."""
         res_bgr = self.process_image(input_data, effect_name, params)
+        if res_bgr is None or not isinstance(res_bgr, np.ndarray) or res_bgr.size == 0:
+            raise RuntimeError("Filter processing returned an empty or invalid image array.")
+
+        # Ensure image array is 3-channel uint8 BGR
+        if len(res_bgr.shape) == 2:
+            res_bgr = cv2.cvtColor(res_bgr, cv2.COLOR_GRAY2BGR)
+        elif len(res_bgr.shape) == 3 and res_bgr.shape[2] == 4:
+            res_bgr = cv2.cvtColor(res_bgr, cv2.COLOR_BGRA2BGR)
+        elif len(res_bgr.shape) == 3 and res_bgr.shape[2] == 1:
+            res_bgr = cv2.cvtColor(res_bgr, cv2.COLOR_GRAY2BGR)
+
+        if res_bgr.dtype != np.uint8:
+            res_bgr = np.clip(res_bgr, 0, 255).astype(np.uint8)
+
         success, encoded = cv2.imencode(ext, res_bgr)
         if not success:
-            raise RuntimeError("Failed to encode processed image to output bytes.")
+            # Fallback PIL encoding
+            pil_img = Image.fromarray(cv2.cvtColor(res_bgr, cv2.COLOR_BGR2RGB))
+            buf = io.BytesIO()
+            pil_img.save(buf, format="JPEG", quality=92)
+            return buf.getvalue()
+
         return encoded.tobytes()
 
     def process_video(self, input_video_path: str, effect_name: str, params: dict = None, max_frames: int = None, stickers: list = None) -> str:
@@ -129,12 +148,26 @@ class ArtCVEngine:
             return input_data
         elif isinstance(input_data, str):
             img = cv2.imread(input_data)
+            if img is None:
+                try:
+                    pil_img = Image.open(input_data).convert("RGB")
+                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                except Exception:
+                    pass
             return img
         elif isinstance(input_data, (bytes, bytearray)):
             nparr = np.frombuffer(input_data, np.uint8)
-            return cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                try:
+                    pil_img = Image.open(io.BytesIO(input_data)).convert("RGB")
+                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                except Exception:
+                    pass
+            return img
         elif isinstance(input_data, Image.Image):
-            rgb = np.array(input_data)
+            rgb = np.array(input_data.convert("RGB"))
             return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
         else:
             raise TypeError("Unsupported image input type.")
+
