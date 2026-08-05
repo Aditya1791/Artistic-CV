@@ -17,6 +17,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./artcv.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Append sslmode=require for remote PostgreSQL connections if omitted
+if "postgresql" in DATABASE_URL and "sslmode" not in DATABASE_URL:
+    sep = "&" if "?" in DATABASE_URL else "?"
+    DATABASE_URL = f"{DATABASE_URL}{sep}sslmode=require"
+
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 
@@ -76,8 +81,22 @@ class GalleryItem(Base):
 
 
 def init_db():
-    """Initializes tables in database."""
-    Base.metadata.create_all(bind=engine)
+    """Initializes tables in database with automatic fallback if remote DB is unreachable."""
+    global engine, SessionLocal
+    try:
+        print(f"[DB] Initializing database engine: {engine.url.render_as_string(hide_password=True)}")
+        Base.metadata.create_all(bind=engine)
+        print("[DB] Database tables created successfully.")
+    except Exception as e:
+        print(f"[DB ERROR] Remote database connection failed: {e}")
+        if "sqlite" not in str(engine.url):
+            print("[DB WARN] Falling back to local SQLite database (sqlite:///./artcv.db) so server can start.")
+            fallback_url = "sqlite:///./artcv.db"
+            engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+            SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            Base.metadata.create_all(bind=engine)
+            print("[DB] Local SQLite fallback ready.")
+
 
 
 def get_db():
