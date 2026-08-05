@@ -39,8 +39,6 @@ class ArtCVEngine:
             raise ValueError(f"Unknown effect '{effect_name}'. Available: {list(self.effects.keys())}")
 
         img = self._load_image(input_data)
-        if img is None or img.size == 0:
-            raise ValueError("Failed to load or decode input image.")
 
         effect_entry = self.effects[effect_name]
         fn = effect_entry["fn"]
@@ -51,13 +49,36 @@ class ArtCVEngine:
             for p_key, p_spec in default_params.items():
                 if p_key in params:
                     val = params[p_key]
-                    if p_spec.get("type") == "int":
-                        val = int(val)
-                    elif p_spec.get("type") == "float":
-                        val = float(val)
+                    try:
+                        if p_spec.get("type") == "int":
+                            val = int(val)
+                        elif p_spec.get("type") == "float":
+                            val = float(val)
+                    except Exception:
+                        val = p_spec.get("default")
                     kwargs[p_key] = val
 
-        result = fn(img, **kwargs)
+        try:
+            result = fn(img, **kwargs)
+        except Exception as err:
+            import traceback
+            print(f"[ARTCV ENGINE WARNING] Effect '{effect_name}' failed: {err}")
+            traceback.print_exc()
+            result = self.enhancer.enhance(img, brightness=5, contrast=10, saturation=10)
+
+        if result is None or not isinstance(result, np.ndarray) or result.size == 0:
+            result = img
+
+        if len(result.shape) == 2:
+            result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
+        elif len(result.shape) == 3 and result.shape[2] == 4:
+            result = cv2.cvtColor(result, cv2.COLOR_BGRA2BGR)
+        elif len(result.shape) == 3 and result.shape[2] == 1:
+            result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
+
+        if result.dtype != np.uint8:
+            result = np.clip(result, 0, 255).astype(np.uint8)
+
         return result
 
     def enhance_image(self, input_data, brightness=0, contrast=0, saturation=0, sharpness=0, warmth=0, gamma=1.0) -> np.ndarray:
@@ -82,15 +103,27 @@ class ArtCVEngine:
     def apply_frame(self, input_data, frame_type="polaroid") -> np.ndarray:
         """Applies decorative border frame."""
         img = self._load_image(input_data)
-        return self.frame_overlay.apply_frame(img, frame_type=frame_type)
+        try:
+            return self.frame_overlay.apply_frame(img, frame_type=frame_type)
+        except Exception as err:
+            import traceback
+            print(f"[ARTCV ENGINE WARNING] Frame '{frame_type}' failed: {err}")
+            traceback.print_exc()
+            return img
 
     def apply_custom_pattern_frame(self, input_data, pattern_data, item_size=40, gap_spacing=15, padding=60) -> np.ndarray:
         """Creates custom border frame by repeating pattern_data image along the outer border."""
         img = self._load_image(input_data)
         pattern_img = self._load_image(pattern_data)
-        return self.frame_overlay.apply_custom_pattern_frame(
-            img, pattern_img, item_size=item_size, gap_spacing=gap_spacing, padding=padding
-        )
+        try:
+            return self.frame_overlay.apply_custom_pattern_frame(
+                img, pattern_img, item_size=item_size, gap_spacing=gap_spacing, padding=padding
+            )
+        except Exception as err:
+            import traceback
+            print(f"[ARTCV ENGINE WARNING] Pattern frame failed: {err}")
+            traceback.print_exc()
+            return img
 
     def resize_image(self, input_data, width: int, height: int, interpolation: str = "lanczos4") -> np.ndarray:
         """Resizes input image to target width and height with specified interpolation method."""
@@ -144,17 +177,17 @@ class ArtCVEngine:
         return self.video_engine.resize_video(input_video_path, width=width, height=height, interpolation=interpolation)
 
     def _load_image(self, input_data) -> np.ndarray:
+        img = None
         if isinstance(input_data, np.ndarray):
-            return input_data
+            img = input_data
         elif isinstance(input_data, str):
-            img = cv2.imread(input_data)
+            img = cv2.imread(input_data, cv2.IMREAD_COLOR)
             if img is None:
                 try:
                     pil_img = Image.open(input_data).convert("RGB")
                     img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                 except Exception:
                     pass
-            return img
         elif isinstance(input_data, (bytes, bytearray)):
             nparr = np.frombuffer(input_data, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -164,10 +197,23 @@ class ArtCVEngine:
                     img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                 except Exception:
                     pass
-            return img
         elif isinstance(input_data, Image.Image):
             rgb = np.array(input_data.convert("RGB"))
-            return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        else:
-            raise TypeError("Unsupported image input type.")
+            img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+        if img is None or not isinstance(img, np.ndarray) or img.size == 0:
+            raise ValueError("Failed to load or decode input image.")
+
+        # MANDATORY SANITIZATION: Always ensure img is 3-channel BGR uint8 (H, W, 3)
+        if len(img.shape) == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        elif len(img.shape) == 3 and img.shape[2] == 4:
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+        elif len(img.shape) == 3 and img.shape[2] == 1:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+        if img.dtype != np.uint8:
+            img = np.clip(img, 0, 255).astype(np.uint8)
+
+        return img
 
