@@ -17,7 +17,12 @@ ENV/
 *.png
 !assets/*.jpg
 !static/previews/*.jpg
+!static/LOGO.jpg
+!static/*.jpg
+!static/*.png
+!static/*.svg
 !static/favicon.ico
+
 
 # Database & Storage
 artcv.db
