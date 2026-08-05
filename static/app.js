@@ -2381,12 +2381,36 @@ async function handleSignupSubmit(e) {
   }
 }
 
+const sampleGoogleAccounts = [
+  { name: "Aditya Swain", email: "aditya.swain@gmail.com", avatar: "https://ui-avatars.com/api/?name=Aditya+Swain&background=4285F4&color=fff" },
+  { name: "Creative Artist", email: "creative.artist@gmail.com", avatar: "https://ui-avatars.com/api/?name=Creative+Artist&background=34A853&color=fff" },
+  { name: "Design Studio", email: "design.studio@gmail.com", avatar: "https://ui-avatars.com/api/?name=Design+Studio&background=FBBC05&color=fff" }
+];
+
 function openGoogleAccountModal() {
   const modal = document.getElementById("googleAccountModal");
+  const listEl = document.getElementById("googleAccountsList");
   const closeBtn = document.getElementById("closeGoogleModalBtn");
   const form = document.getElementById("googleConnectForm");
 
   if (!modal) return;
+
+  if (listEl) {
+    listEl.innerHTML = "";
+    sampleGoogleAccounts.forEach((acc) => {
+      const item = document.createElement("div");
+      item.className = "google-account-item";
+      item.innerHTML = `
+        <img src="${acc.avatar}" alt="${acc.name}" class="google-acc-avatar">
+        <div class="google-acc-info">
+          <span class="google-acc-name">${acc.name}</span>
+          <span class="google-acc-email">${acc.email}</span>
+        </div>
+      `;
+      item.addEventListener("click", () => connectGoogleAccount(acc.email, acc.name, acc.avatar));
+      listEl.appendChild(item);
+    });
+  }
 
   if (closeBtn) {
     closeBtn.onclick = () => { modal.style.display = "none"; };
@@ -2408,7 +2432,7 @@ function openGoogleAccountModal() {
   modal.style.display = "flex";
 }
 
-async function connectGoogleAccount(email, name = "") {
+async function connectGoogleAccount(email, name = "", avatarUrl = "") {
   try {
     const modal = document.getElementById("googleAccountModal");
     if (modal) modal.style.display = "none";
@@ -2419,7 +2443,7 @@ async function connectGoogleAccount(email, name = "") {
       body: JSON.stringify({
         email: email,
         name: name || email.split("@")[0],
-        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=4285F4&color=fff`,
+        avatar_url: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=4285F4&color=fff`,
         provider: "google"
       })
     });
@@ -2433,8 +2457,6 @@ async function connectGoogleAccount(email, name = "") {
     hideAuthModal();
     updateAuthUI();
     await fetchGallery();
-
-    alert(`Successfully connected Google account (${email}) to ArtisticCV! 🎉`);
   } catch (err) {
     alert(`Google connection error: ${err.message}`);
   }
@@ -2450,19 +2472,40 @@ function handleGoogleLogin(e) {
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(oauthConfig.google_client_id)}&redirect_uri=${encodeURIComponent(currentUrl)}&response_type=id_token&scope=openid%20email%20profile&nonce=${Date.now()}&prompt=select_account`;
     window.location.href = googleAuthUrl;
   } else {
-    // Open official Google Account Chooser in new window
-    window.open("https://accounts.google.com/AccountChooser", "_blank");
-    // Open connection modal on ArtisticCV
     openGoogleAccountModal();
   }
 }
 
+const sampleFacebookAccounts = [
+  { name: "Aditya Swain (Facebook)", email: "aditya.facebook@gmail.com", avatar: "https://ui-avatars.com/api/?name=Aditya+Facebook&background=1877F2&color=fff" },
+  { name: "Creative Creator", email: "creative.creator@facebook.user", avatar: "https://ui-avatars.com/api/?name=Creative+Creator&background=0052cc&color=fff" },
+  { name: "Digital Artist", email: "digital.artist@facebook.user", avatar: "https://ui-avatars.com/api/?name=Digital+Artist&background=4267B2&color=fff" }
+];
+
 function openFacebookAccountModal() {
   const modal = document.getElementById("facebookAccountModal");
+  const listEl = document.getElementById("facebookAccountsList");
   const closeBtn = document.getElementById("closeFacebookModalBtn");
   const form = document.getElementById("facebookConnectForm");
 
   if (!modal) return;
+
+  if (listEl) {
+    listEl.innerHTML = "";
+    sampleFacebookAccounts.forEach((acc) => {
+      const item = document.createElement("div");
+      item.className = "facebook-account-item";
+      item.innerHTML = `
+        <img src="${acc.avatar}" alt="${acc.name}" class="facebook-acc-avatar">
+        <div class="facebook-acc-info">
+          <span class="facebook-acc-name">${acc.name}</span>
+          <span class="facebook-acc-email">${acc.email}</span>
+        </div>
+      `;
+      item.addEventListener("click", () => connectFacebookAccount(acc.email, acc.name, acc.avatar));
+      listEl.appendChild(item);
+    });
+  }
 
   if (closeBtn) {
     closeBtn.onclick = () => { modal.style.display = "none"; };
@@ -2484,7 +2527,7 @@ function openFacebookAccountModal() {
   modal.style.display = "flex";
 }
 
-async function connectFacebookAccount(email, name = "") {
+async function connectFacebookAccount(email, name = "", avatarUrl = "") {
   try {
     const modal = document.getElementById("facebookAccountModal");
     if (modal) modal.style.display = "none";
@@ -2495,7 +2538,7 @@ async function connectFacebookAccount(email, name = "") {
       body: JSON.stringify({
         email: email,
         name: name || email.split("@")[0],
-        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=1877F2&color=fff`,
+        avatar_url: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=1877F2&color=fff`,
         provider: "facebook"
       })
     });
@@ -2509,8 +2552,6 @@ async function connectFacebookAccount(email, name = "") {
     hideAuthModal();
     updateAuthUI();
     await fetchGallery();
-
-    alert(`Successfully connected Facebook account (${email}) to ArtisticCV! 🎉`);
   } catch (err) {
     alert(`Facebook connection error: ${err.message}`);
   }
@@ -2526,9 +2567,6 @@ function handleFacebookLogin(e) {
     const fbAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(oauthConfig.facebook_app_id)}&redirect_uri=${encodeURIComponent(currentUrl)}&response_type=token&scope=email,public_profile`;
     window.location.href = fbAuthUrl;
   } else {
-    // Open official Facebook Login page in new window
-    window.open("https://www.facebook.com/login", "_blank");
-    // Open connection modal on ArtisticCV
     openFacebookAccountModal();
   }
 }
