@@ -2321,6 +2321,65 @@ async function handleSignupSubmit(e) {
   }
 }
 
+function openGoogleAccountModal() {
+  const modal = document.getElementById("googleAccountModal");
+  const closeBtn = document.getElementById("closeGoogleModalBtn");
+  const form = document.getElementById("googleConnectForm");
+
+  if (!modal) return;
+
+  if (closeBtn) {
+    closeBtn.onclick = () => { modal.style.display = "none"; };
+  }
+
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  };
+
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const email = document.getElementById("googleCustomEmail").value;
+      const name = document.getElementById("googleCustomName").value || email.split("@")[0];
+      connectGoogleAccount(email, name);
+    };
+  }
+
+  modal.style.display = "flex";
+}
+
+async function connectGoogleAccount(email, name = "") {
+  try {
+    const modal = document.getElementById("googleAccountModal");
+    if (modal) modal.style.display = "none";
+
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        name: name || email.split("@")[0],
+        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=4285F4&color=fff`,
+        provider: "google"
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Google authentication failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    hideAuthModal();
+    updateAuthUI();
+    await fetchGallery();
+
+    alert(`Successfully connected Google account (${email}) to ArtisticCV! 🎉`);
+  } catch (err) {
+    alert(`Google connection error: ${err.message}`);
+  }
+}
+
 function handleGoogleLogin(e) {
   if (e) {
     if (e.preventDefault) e.preventDefault();
@@ -2331,8 +2390,69 @@ function handleGoogleLogin(e) {
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(oauthConfig.google_client_id)}&redirect_uri=${encodeURIComponent(currentUrl)}&response_type=id_token&scope=openid%20email%20profile&nonce=${Date.now()}&prompt=select_account`;
     window.location.href = googleAuthUrl;
   } else {
-    // Redirect directly to Google's official Sign In page with return URL to ArtisticCV
-    window.location.href = `https://accounts.google.com/ServiceLogin?continue=${encodeURIComponent(currentUrl)}&service=lso`;
+    // Open official Google Account Chooser in new window
+    window.open("https://accounts.google.com/AccountChooser", "_blank");
+    // Open connection modal on ArtisticCV
+    openGoogleAccountModal();
+  }
+}
+
+function openFacebookAccountModal() {
+  const modal = document.getElementById("facebookAccountModal");
+  const closeBtn = document.getElementById("closeFacebookModalBtn");
+  const form = document.getElementById("facebookConnectForm");
+
+  if (!modal) return;
+
+  if (closeBtn) {
+    closeBtn.onclick = () => { modal.style.display = "none"; };
+  }
+
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  };
+
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const email = document.getElementById("facebookCustomEmail").value;
+      const name = document.getElementById("facebookCustomName").value || email.split("@")[0];
+      connectFacebookAccount(email, name);
+    };
+  }
+
+  modal.style.display = "flex";
+}
+
+async function connectFacebookAccount(email, name = "") {
+  try {
+    const modal = document.getElementById("facebookAccountModal");
+    if (modal) modal.style.display = "none";
+
+    const res = await fetch("/api/auth/facebook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        name: name || email.split("@")[0],
+        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=1877F2&color=fff`,
+        provider: "facebook"
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Facebook authentication failed");
+
+    jwtToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem("artcv_token", jwtToken);
+    hideAuthModal();
+    updateAuthUI();
+    await fetchGallery();
+
+    alert(`Successfully connected Facebook account (${email}) to ArtisticCV! 🎉`);
+  } catch (err) {
+    alert(`Facebook connection error: ${err.message}`);
   }
 }
 
@@ -2346,8 +2466,10 @@ function handleFacebookLogin(e) {
     const fbAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(oauthConfig.facebook_app_id)}&redirect_uri=${encodeURIComponent(currentUrl)}&response_type=token&scope=email,public_profile`;
     window.location.href = fbAuthUrl;
   } else {
-    // Redirect directly to Facebook's official Login page with return URL to ArtisticCV
-    window.location.href = `https://www.facebook.com/login.php?next=${encodeURIComponent(currentUrl)}`;
+    // Open official Facebook Login page in new window
+    window.open("https://www.facebook.com/login", "_blank");
+    // Open connection modal on ArtisticCV
+    openFacebookAccountModal();
   }
 }
 
