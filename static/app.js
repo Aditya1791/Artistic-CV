@@ -1961,9 +1961,11 @@ function updateAuthUI() {
   const loginHeroSection = document.getElementById("loginHeroSection");
   const workspace = document.getElementById("workspace");
   const modeSwitcher = document.querySelector(".mode-switcher");
+  const mainNavbar = document.getElementById("mainNavbar");
 
   if (currentUser || isGuestMode) {
-    // Show Editing Studio Workspace
+    // Show Top Navbar & Editing Studio Workspace
+    if (mainNavbar) mainNavbar.style.display = "flex";
     if (loginHeroSection) loginHeroSection.style.display = "none";
     if (workspace) workspace.style.display = "flex";
     if (modeSwitcher) modeSwitcher.style.display = "flex";
@@ -1980,7 +1982,8 @@ function updateAuthUI() {
       if (userProfileBar) userProfileBar.style.display = "none";
     }
   } else {
-    // Default Homepage Login View
+    // Clean Default Homepage Login Screen (Hide Header & Workspace)
+    if (mainNavbar) mainNavbar.style.display = "none";
     if (loginHeroSection) loginHeroSection.style.display = "flex";
     if (workspace) workspace.style.display = "none";
     if (modeSwitcher) modeSwitcher.style.display = "none";
@@ -1991,6 +1994,7 @@ function updateAuthUI() {
 
   updateGalleryBadge();
 }
+
 
 function updateGalleryBadge() {
   const badge = document.getElementById("galleryCountBadge");

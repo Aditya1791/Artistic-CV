@@ -1527,6 +1527,7 @@ body {
 /* Homepage Login & Portal Hero Section */
 .login-hero-section {
   flex: 1;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1535,6 +1536,7 @@ body {
               radial-gradient(circle at 80% 80%, rgba(192, 132, 252, 0.12) 0%, transparent 60%);
   overflow-y: auto;
 }
+
 
 .login-hero-container {
   display: flex;
