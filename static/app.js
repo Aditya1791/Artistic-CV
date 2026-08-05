@@ -1988,6 +1988,7 @@ function updateAuthUI() {
   const userProfileBar = document.getElementById("userProfileBar");
   const userNameText = document.getElementById("userNameText");
   const userAvatarImg = document.getElementById("userAvatarImg");
+  const userProviderTag = document.getElementById("userProviderTag");
   const loginHeroSection = document.getElementById("loginHeroSection");
   const workspace = document.getElementById("workspace");
   const modeSwitcher = document.querySelector(".mode-switcher");
@@ -2007,6 +2008,10 @@ function updateAuthUI() {
       if (userAvatarImg) {
         userAvatarImg.src = currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff`;
       }
+      if (userProviderTag) {
+        const prov = currentUser.provider || "google";
+        userProviderTag.innerText = prov.toUpperCase();
+      }
     } else {
       if (openAuthBtn) openAuthBtn.style.display = "block";
       if (userProfileBar) userProfileBar.style.display = "none";
@@ -2023,6 +2028,28 @@ function updateAuthUI() {
   }
 
   updateGalleryBadge();
+}
+
+function openAccountSettingsModal() {
+  if (!currentUser) return;
+  const modal = document.getElementById("accountSettingsModal");
+  if (!modal) return;
+
+  const modalUserAvatar = document.getElementById("modalUserAvatar");
+  const modalUserName = document.getElementById("modalUserName");
+  const modalUserEmail = document.getElementById("modalUserEmail");
+  const modalUserProvider = document.getElementById("modalUserProvider");
+  const accountGalleryCount = document.getElementById("accountGalleryCount");
+
+  if (modalUserAvatar) {
+    modalUserAvatar.src = currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff`;
+  }
+  if (modalUserName) modalUserName.innerText = currentUser.name;
+  if (modalUserEmail) modalUserEmail.innerText = currentUser.email;
+  if (modalUserProvider) modalUserProvider.innerText = `${(currentUser.provider || 'google').toUpperCase()} Account`;
+  if (accountGalleryCount) accountGalleryCount.innerText = galleryItems.length;
+
+  modal.style.display = "flex";
 }
 
 
@@ -2044,6 +2071,13 @@ function setupAuthEvents() {
   const logoutBtn = document.getElementById("logoutBtn");
   const googleBtn = document.getElementById("googleAuthBtn");
   const facebookBtn = document.getElementById("facebookAuthBtn");
+
+  // Account Profile Badge & Modal Elements
+  const userProfileBar = document.getElementById("userProfileBar");
+  const closeAccountSettingsModalBtn = document.getElementById("closeAccountSettingsModalBtn");
+  const accountSettingsModal = document.getElementById("accountSettingsModal");
+  const accountOpenGalleryBtn = document.getElementById("accountOpenGalleryBtn");
+  const accountLogoutBtn = document.getElementById("accountLogoutBtn");
 
   // Hero Homepage Portal Elements
   const heroTabLoginBtn = document.getElementById("heroTabLoginBtn");
@@ -2074,6 +2108,32 @@ function setupAuthEvents() {
   if (heroSignupForm) heroSignupForm.addEventListener("submit", handleHeroSignupSubmit);
 
   if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+  if (userProfileBar) {
+    userProfileBar.addEventListener("click", () => openAccountSettingsModal());
+  }
+  if (closeAccountSettingsModalBtn) {
+    closeAccountSettingsModalBtn.addEventListener("click", () => {
+      if (accountSettingsModal) accountSettingsModal.style.display = "none";
+    });
+  }
+  if (accountSettingsModal) {
+    accountSettingsModal.addEventListener("click", (e) => {
+      if (e.target === accountSettingsModal) accountSettingsModal.style.display = "none";
+    });
+  }
+  if (accountOpenGalleryBtn) {
+    accountOpenGalleryBtn.addEventListener("click", () => {
+      if (accountSettingsModal) accountSettingsModal.style.display = "none";
+      openGalleryModal();
+    });
+  }
+  if (accountLogoutBtn) {
+    accountLogoutBtn.addEventListener("click", () => {
+      if (accountSettingsModal) accountSettingsModal.style.display = "none";
+      handleLogout();
+    });
+  }
 
   if (googleBtn) googleBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); handleGoogleLogin(e); });
   if (facebookBtn) facebookBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); handleFacebookLogin(e); });

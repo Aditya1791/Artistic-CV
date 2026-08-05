@@ -41,10 +41,18 @@
 
         <div class="auth-wrapper" id="authWrapper">
           <button class="btn primary auth-login-btn" id="openAuthBtn">🔑 Sign In / Register</button>
-          <div class="user-profile-bar" id="userProfileBar" style="display: none;">
-            <img id="userAvatarImg" class="user-avatar" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
-            <span id="userNameText" class="user-name">User</span>
-            <button class="btn secondary icon-only-btn" id="logoutBtn" title="Log Out">🚪</button>
+
+          <!-- Authenticated Account Profile Badge -->
+          <div class="user-profile-badge" id="userProfileBar" style="display: none;" title="Account Settings & Profile">
+            <div class="user-avatar-wrap">
+              <img id="userAvatarImg" class="user-avatar" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
+              <span class="user-online-dot"></span>
+            </div>
+            <div class="user-badge-info">
+              <span id="userNameText" class="user-name">User</span>
+              <span id="userProviderTag" class="user-provider-tag">ArtisticCV</span>
+            </div>
+            <span class="user-dropdown-arrow">▼</span>
           </div>
         </div>
 
@@ -787,6 +795,71 @@
           Connect Facebook Account & Start 🚀
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- Account Settings & Profile Modal -->
+  <div class="modal-overlay" id="accountSettingsModal" style="display: none;">
+    <div class="modal-card account-settings-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <h2 style="margin: 0; font-size: 1.25rem;">⚙️ Account Settings & Profile</h2>
+          <p style="margin-top: 4px; font-size: 0.82rem; color: var(--text-muted);">Manage your connected platform account and preferences</p>
+        </div>
+        <button class="modal-close-btn" id="closeAccountSettingsModalBtn">✕</button>
+      </div>
+
+      <div class="account-profile-header">
+        <div class="profile-avatar-large-wrap">
+          <img id="modalUserAvatar" class="profile-avatar-large" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
+          <span class="avatar-badge-icon">🎨</span>
+        </div>
+        <div class="profile-details-box">
+          <h3 id="modalUserName" class="profile-display-name">Aditya Swain</h3>
+          <p id="modalUserEmail" class="profile-email-text">aditya@gmail.com</p>
+          <div class="profile-tags-row">
+            <span id="modalUserProvider" class="account-type-tag">Google Account</span>
+            <span class="account-status-tag">PRO Artist</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="account-stats-grid">
+        <div class="account-stat-card">
+          <span class="stat-icon">🖼️</span>
+          <div class="stat-info">
+            <span class="stat-value" id="accountGalleryCount">0</span>
+            <span class="stat-label">Saved Media Items</span>
+          </div>
+        </div>
+        <div class="account-stat-card">
+          <span class="stat-icon">🛡️</span>
+          <div class="stat-info">
+            <span class="stat-value">Verified</span>
+            <span class="stat-label">Account Security</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="account-actions-list">
+        <button class="account-action-btn" id="accountOpenGalleryBtn">
+          <span class="action-icon">📂</span>
+          <div class="action-text">
+            <strong>Open Database Gallery</strong>
+            <span>View all your saved photos & videos</span>
+          </div>
+          <span class="action-chevron">➔</span>
+        </button>
+
+        <button class="account-action-btn danger" id="accountLogoutBtn">
+          <span class="action-icon">🚪</span>
+          <div class="action-text">
+            <strong>Sign Out of ArtisticCV</strong>
+            <span>Disconnect session & return to homepage</span>
+          </div>
+          <span class="action-chevron">➔</span>
+        </button>
+      </div>
     </div>
   </div>
 
