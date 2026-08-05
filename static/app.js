@@ -1951,21 +1951,41 @@ async function fetchCurrentUser() {
   }
 }
 
+let isGuestMode = false;
+
 function updateAuthUI() {
   const openAuthBtn = document.getElementById("openAuthBtn");
   const userProfileBar = document.getElementById("userProfileBar");
   const userNameText = document.getElementById("userNameText");
   const userAvatarImg = document.getElementById("userAvatarImg");
+  const loginHeroSection = document.getElementById("loginHeroSection");
+  const workspace = document.getElementById("workspace");
+  const modeSwitcher = document.querySelector(".mode-switcher");
 
-  if (currentUser) {
-    if (openAuthBtn) openAuthBtn.style.display = "none";
-    if (userProfileBar) userProfileBar.style.display = "flex";
-    if (userNameText) userNameText.innerText = currentUser.name;
-    if (userAvatarImg) {
-      userAvatarImg.src = currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff`;
+  if (currentUser || isGuestMode) {
+    // Show Editing Studio Workspace
+    if (loginHeroSection) loginHeroSection.style.display = "none";
+    if (workspace) workspace.style.display = "flex";
+    if (modeSwitcher) modeSwitcher.style.display = "flex";
+
+    if (currentUser) {
+      if (openAuthBtn) openAuthBtn.style.display = "none";
+      if (userProfileBar) userProfileBar.style.display = "flex";
+      if (userNameText) userNameText.innerText = currentUser.name;
+      if (userAvatarImg) {
+        userAvatarImg.src = currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=6366f1&color=fff`;
+      }
+    } else {
+      if (openAuthBtn) openAuthBtn.style.display = "block";
+      if (userProfileBar) userProfileBar.style.display = "none";
     }
   } else {
-    if (openAuthBtn) openAuthBtn.style.display = "block";
+    // Default Homepage Login View
+    if (loginHeroSection) loginHeroSection.style.display = "flex";
+    if (workspace) workspace.style.display = "none";
+    if (modeSwitcher) modeSwitcher.style.display = "none";
+
+    if (openAuthBtn) openAuthBtn.style.display = "none";
     if (userProfileBar) userProfileBar.style.display = "none";
   }
 
@@ -1991,6 +2011,15 @@ function setupAuthEvents() {
   const googleBtn = document.getElementById("googleAuthBtn");
   const facebookBtn = document.getElementById("facebookAuthBtn");
 
+  // Hero Homepage Portal Elements
+  const heroTabLoginBtn = document.getElementById("heroTabLoginBtn");
+  const heroTabSignupBtn = document.getElementById("heroTabSignupBtn");
+  const heroLoginForm = document.getElementById("heroLoginForm");
+  const heroSignupForm = document.getElementById("heroSignupForm");
+  const heroGoogleBtn = document.getElementById("heroGoogleAuthBtn");
+  const heroFacebookBtn = document.getElementById("heroFacebookAuthBtn");
+  const guestExploreBtn = document.getElementById("guestExploreBtn");
+
   if (openAuthBtn) {
     openAuthBtn.addEventListener("click", () => showAuthModal("login"));
   }
@@ -1998,29 +2027,31 @@ function setupAuthEvents() {
     closeAuthBtn.addEventListener("click", () => hideAuthModal());
   }
 
-  if (tabLoginBtn) {
-    tabLoginBtn.addEventListener("click", () => switchAuthTab("login"));
-  }
-  if (tabSignupBtn) {
-    tabSignupBtn.addEventListener("click", () => switchAuthTab("signup"));
-  }
+  if (tabLoginBtn) tabLoginBtn.addEventListener("click", () => switchAuthTab("login"));
+  if (tabSignupBtn) tabSignupBtn.addEventListener("click", () => switchAuthTab("signup"));
 
-  if (loginForm) {
-    loginForm.addEventListener("submit", handleLoginSubmit);
-  }
-  if (signupForm) {
-    signupForm.addEventListener("submit", handleSignupSubmit);
-  }
+  if (heroTabLoginBtn) heroTabLoginBtn.addEventListener("click", () => switchHeroAuthTab("login"));
+  if (heroTabSignupBtn) heroTabSignupBtn.addEventListener("click", () => switchHeroAuthTab("signup"));
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
+  if (loginForm) loginForm.addEventListener("submit", handleLoginSubmit);
+  if (signupForm) signupForm.addEventListener("submit", handleSignupSubmit);
 
-  if (googleBtn) {
-    googleBtn.addEventListener("click", handleGoogleLogin);
-  }
-  if (facebookBtn) {
-    facebookBtn.addEventListener("click", handleFacebookLogin);
+  if (heroLoginForm) heroLoginForm.addEventListener("submit", handleHeroLoginSubmit);
+  if (heroSignupForm) heroSignupForm.addEventListener("submit", handleHeroSignupSubmit);
+
+  if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+  if (googleBtn) googleBtn.addEventListener("click", handleGoogleLogin);
+  if (facebookBtn) facebookBtn.addEventListener("click", handleFacebookLogin);
+
+  if (heroGoogleBtn) heroGoogleBtn.addEventListener("click", handleGoogleLogin);
+  if (heroFacebookBtn) heroFacebookBtn.addEventListener("click", handleFacebookLogin);
+
+  if (guestExploreBtn) {
+    guestExploreBtn.addEventListener("click", () => {
+      isGuestMode = true;
+      updateAuthUI();
+    });
   }
 
   if (authModal) {
@@ -2030,45 +2061,29 @@ function setupAuthEvents() {
   }
 }
 
-function showAuthModal(mode = "login", alertMessage = null) {
-  const modal = document.getElementById("authModal");
-  if (modal) modal.style.display = "flex";
-  switchAuthTab(mode);
-  if (alertMessage) showAuthAlert(alertMessage, "error");
-}
+function switchHeroAuthTab(mode) {
+  const heroTabLoginBtn = document.getElementById("heroTabLoginBtn");
+  const heroTabSignupBtn = document.getElementById("heroTabSignupBtn");
+  const heroLoginForm = document.getElementById("heroLoginForm");
+  const heroSignupForm = document.getElementById("heroSignupForm");
 
-function hideAuthModal() {
-  const modal = document.getElementById("authModal");
-  if (modal) modal.style.display = "none";
-  showAuthAlert(null);
-}
-
-function switchAuthTab(mode) {
-  const tabLoginBtn = document.getElementById("tabLoginBtn");
-  const tabSignupBtn = document.getElementById("tabSignupBtn");
-  const loginForm = document.getElementById("loginForm");
-  const signupForm = document.getElementById("signupForm");
-  const modalTitle = document.getElementById("authModalTitle");
-
-  showAuthAlert(null);
+  showHeroAuthAlert(null);
 
   if (mode === "login") {
-    if (tabLoginBtn) tabLoginBtn.classList.add("active");
-    if (tabSignupBtn) tabSignupBtn.classList.remove("active");
-    if (loginForm) loginForm.style.display = "flex";
-    if (signupForm) signupForm.style.display = "none";
-    if (modalTitle) modalTitle.innerText = "Sign In to ArtisticCV";
+    if (heroTabLoginBtn) heroTabLoginBtn.classList.add("active");
+    if (heroTabSignupBtn) heroTabSignupBtn.classList.remove("active");
+    if (heroLoginForm) heroLoginForm.style.display = "flex";
+    if (heroSignupForm) heroSignupForm.style.display = "none";
   } else {
-    if (tabSignupBtn) tabSignupBtn.classList.add("active");
-    if (tabLoginBtn) tabLoginBtn.classList.remove("active");
-    if (signupForm) signupForm.style.display = "flex";
-    if (loginForm) loginForm.style.display = "none";
-    if (modalTitle) modalTitle.innerText = "Create Your Account";
+    if (heroTabSignupBtn) heroTabSignupBtn.classList.add("active");
+    if (heroTabLoginBtn) heroTabLoginBtn.classList.remove("active");
+    if (heroSignupForm) heroSignupForm.style.display = "flex";
+    if (heroLoginForm) heroLoginForm.style.display = "none";
   }
 }
 
-function showAuthAlert(msg, type = "error") {
-  const alertEl = document.getElementById("authAlert");
+function showHeroAuthAlert(msg, type = "error") {
+  const alertEl = document.getElementById("heroAuthAlert");
   if (!alertEl) return;
   if (!msg) {
     alertEl.style.display = "none";
@@ -2080,11 +2095,11 @@ function showAuthAlert(msg, type = "error") {
   alertEl.style.display = "block";
 }
 
-async function handleLoginSubmit(e) {
+async function handleHeroLoginSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById("loginEmail").value;
-  const password = document.getElementById("loginPassword").value;
-  const submitBtn = document.getElementById("loginSubmitBtn");
+  const email = document.getElementById("heroLoginEmail").value;
+  const password = document.getElementById("heroLoginPassword").value;
+  const submitBtn = document.getElementById("heroLoginSubmitBtn");
 
   submitBtn.innerText = "Signing In...";
   submitBtn.disabled = true;
@@ -2103,21 +2118,20 @@ async function handleLoginSubmit(e) {
     localStorage.setItem("artcv_token", jwtToken);
     updateAuthUI();
     await fetchGallery();
-    hideAuthModal();
   } catch (err) {
-    showAuthAlert(err.message, "error");
+    showHeroAuthAlert(err.message, "error");
   } finally {
-    submitBtn.innerText = "Sign In 🚀";
+    submitBtn.innerText = "Sign In & Open Studio 🚀";
     submitBtn.disabled = false;
   }
 }
 
-async function handleSignupSubmit(e) {
+async function handleHeroSignupSubmit(e) {
   e.preventDefault();
-  const name = document.getElementById("signupName").value;
-  const email = document.getElementById("signupEmail").value;
-  const password = document.getElementById("signupPassword").value;
-  const submitBtn = document.getElementById("signupSubmitBtn");
+  const name = document.getElementById("heroSignupName").value;
+  const email = document.getElementById("heroSignupEmail").value;
+  const password = document.getElementById("heroSignupPassword").value;
+  const submitBtn = document.getElementById("heroSignupSubmitBtn");
 
   submitBtn.innerText = "Creating Account...";
   submitBtn.disabled = true;
@@ -2136,68 +2150,11 @@ async function handleSignupSubmit(e) {
     localStorage.setItem("artcv_token", jwtToken);
     updateAuthUI();
     await fetchGallery();
-    hideAuthModal();
   } catch (err) {
-    showAuthAlert(err.message, "error");
+    showHeroAuthAlert(err.message, "error");
   } finally {
-    submitBtn.innerText = "Create Account ✨";
+    submitBtn.innerText = "Create Account & Start ✨";
     submitBtn.disabled = false;
-  }
-}
-
-async function handleGoogleLogin() {
-  const email = prompt("Enter your Google Account email for authentication:", "artist@gmail.com");
-  if (!email) return;
-
-  try {
-    const res = await fetch("/api/auth/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email,
-        name: email.split("@")[0],
-        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split("@")[0])}&background=4285F4&color=fff`
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "Google authentication failed");
-
-    jwtToken = data.token;
-    currentUser = data.user;
-    localStorage.setItem("artcv_token", jwtToken);
-    updateAuthUI();
-    await fetchGallery();
-    hideAuthModal();
-  } catch (err) {
-    showAuthAlert(err.message, "error");
-  }
-}
-
-async function handleFacebookLogin() {
-  const email = prompt("Enter your Facebook email or username for authentication:", "fb_user@facebook.com");
-  if (!email) return;
-
-  try {
-    const res = await fetch("/api/auth/facebook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email,
-        name: email.split("@")[0],
-        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split("@")[0])}&background=1877F2&color=fff`
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "Facebook authentication failed");
-
-    jwtToken = data.token;
-    currentUser = data.user;
-    localStorage.setItem("artcv_token", jwtToken);
-    updateAuthUI();
-    await fetchGallery();
-    hideAuthModal();
-  } catch (err) {
-    showAuthAlert(err.message, "error");
   }
 }
 
@@ -2205,12 +2162,14 @@ function handleLogout() {
   if (confirm("Are you sure you want to log out?")) {
     jwtToken = null;
     currentUser = null;
+    isGuestMode = false;
     galleryItems = [];
     localStorage.removeItem("artcv_token");
     updateAuthUI();
     renderGallery();
   }
 }
+
 
 // --- Database Gallery Controller ---
 
